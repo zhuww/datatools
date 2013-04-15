@@ -75,7 +75,7 @@ class TOA(object):
             self.format = 'Parkes'
             self.info = []
             self.line = line.ljust(80, ' ')
-            self._Observatory = self.line[79]
+            self._Observatory = self.line[79].strip()[0]
             self.Observatory = Observatory_list[str(self._Observatory)]
             self.info.append(self.line[1:25].strip())
             self.frequency = Decimal(self.line[25:34])
@@ -87,7 +87,7 @@ class TOA(object):
             self.format = 'Princeton'
             self.info = []
             self.line = line.ljust(78, ' ')
-            self._Observatory = int(self.line[0])
+            self._Observatory = self.line[0].strip()[0]
             self.Observatory = Observatory_list[str(self._Observatory)]
             self.info.append(self.line[2:15].strip())
             self.frequency = Decimal(self.line[15:24])
@@ -95,12 +95,12 @@ class TOA(object):
             self.TOAsigma = Decimal(self.line[44:53])
             self.info.append(self.line[53:68].strip())
             self.DMcorr = Decimal(self.line[68:77])
-        elif not line[0] ==' ' and not line[1] == ' ' and line[14] == '.':
+        elif not line[0] ==' ' and not line[1] == ' ' and line[14] == '.' and len(line.rstrip(' ')) <= 60:
             self.format = 'ITOA'
             self.info = []
             self.line = line.ljust(59, ' ')
-            self._Observatory = self.line[57:59]
-            self.Observatory = Observatory_list[str(self._Observatory.strip())[0]]
+            self._Observatory = self.line[57:59].strip()[0]
+            self.Observatory = Observatory_list[str(self._Observatory)]
             self.info.append(self.line[:9].strip())
             self.TOA = Decimal(self.line[9:28])
             self.TOAsigma = Decimal(self.line[28:34])
@@ -116,16 +116,24 @@ class TOA(object):
             self.frequency = Decimal(line[1])
             self.TOA = Decimal(line[2])
             self.TOAsigma = Decimal(line[3])
-            self._Observatory = line[4]
-            self.Observatory = Observatory_list[str(self._Observatory.strip())[0]]
+            self._Observatory = line[4].strip()
+            if self._Observatory in Observatory_list:
+                self.Observatory = Observatory_list[str(self._Observatory)]
+            else:
+                self.Observatory = str(self._Observatory)
             #self.info.extend(line[5:])
             tags = ' '.join(line[5:])
             import re
             p = re.compile('-(?P<par>\w+)\s+(?P<value>\S+)', re.VERBOSE)
             for m in p.finditer(tags):
                 par = str(m.group('par'))
-                value = str(m.group('value'))
+                try:
+                    value = int(m.group('value'))
+                except:
+                    value = str(m.group('value'))
                 self.flags[par] = value
+            self.info.append(tags)
+            self.DMcorr = Decimal(0)
 
 
         #if self.flags.has_key('EQUAD'):
@@ -135,12 +143,9 @@ class TOA(object):
         return '%s format TOA %s(%s us) at %s MHZ' % (self.format, self.TOA, self.TOAsigma, self.frequency)
     def __str__(self):
         if self.format == 'Princeton':
-            #return '%d %s%9.3f%20.13f%9.3f%s%9.5f' % (self._Observatory, self.info[0][:13].ljust(13, ' '), self.frequency, self.TOA, self.TOAsigma,self.info[1][:15].rjust(15,' '), self.DMcorr)
-            #return '%d %s%9.3f%s%9.3f%s%9.5f' % (self._Observatory, self.info[0][:13].ljust(13, ' '), self.frequency, str(self.TOA.quantize(Decimal(0.0000000000001))).rjust(20, ' '), self.TOAsigma,self.info[1][:15].rjust(15,' '), self.DMcorr)
-            #return '%d %s%9.3f%s%9.3f%s%9.5f' % (self._Observatory, self.info[0][:13].ljust(13, ' '), self.frequency, str(self.TOA.quantize(Decimal(0.00000000000001))).rjust(20, ' '), self.TOAsigma,self.info[1][:15].rjust(15,' '), self.DMcorr)
-            return '%d %s%8.2f %s%9.3f%s%9.5f' % (self._Observatory, self.info[0][:13].ljust(13, ' '), self.frequency, str(self.TOA.quantize(Decimal(0.00000000000001))).rjust(20, ' '), self.TOAsigma, self.info[1][:15].rjust(15,' '), self.DMcorr)
+            return '%s %s%8.2f %s%9.3f%s%9.5f' % (self._Observatory, self.info[0][:13].ljust(13, ' '), self.frequency, str(self.TOA.quantize(Decimal(0.00000000000001))).rjust(20, ' '), self.TOAsigma, self.info[1][:15].rjust(15,' '), self.DMcorr)
         if self.format == 'Parkes':
-            return ' %s%8.2f %s%8.5f%8.3f%s%d' % (self.info[0].ljust(24, ' '), self.frequency,str(self.TOA.quantize(Decimal(0.0000000000001))).rjust(21, ' '), self.DMcorr, self.TOAsigma, self.info[1][:8].rjust(8, ' '), self._Observatory)
+            return ' %s%8.2f %s%8.5f%8.3f%s%s' % (self.info[0].ljust(24, ' '), self.frequency,str(self.TOA.quantize(Decimal(0.0000000000001))).rjust(21, ' '), self.DMcorr, self.TOAsigma, self.info[1][:8].rjust(8, ' '), self._Observatory)
         if self.format == 'ITOA':
             try:
                 info = ' '.join(self.info).strip().ljust(9, ' ')
@@ -151,16 +156,19 @@ class TOA(object):
             return '%s%s%6.3f%11.3f%10.5f  %s' % (info,str(self.TOA.quantize(Decimal(0.0000000000001))).rjust(19, ' '), self.TOAsigma,self.frequency, self.DMcorr, self._Observatory)
         if self.format == 'Tempo2':
             kwpars = ''
-            for key in [k for k in sorted(self.flags.keys(), reverse=True) if not k == 'EQUAD' and not k == 'JUMPflag' and not k =='EMAX' and not k =='EFAC']:
+            for key in [k for k in sorted(self.flags.keys(), reverse=True) if not k == 'EQUAD' and not k == 'JUMPflag' and not k =='EMAX' and not k =='EFAC' and not k =='EMIN']:
                 kwpars += ' -%s %s ' % (key, self.flags[key])
             return '%s %s %s %s %s %s' % (self.info[0], self.frequency, str(self.TOA.quantize(Decimal(0.0000000000001))).rjust(19, ' '), str(self.TOAsigma.quantize(Decimal(0.001))), self._Observatory, kwpars) 
     def tempo2fmt(self):
         file = self.file.replace(' ','_').replace('-', '_')
         fmtstr = '%s %s %s %s %s' % (file, self.frequency, str(self.TOA.quantize(Decimal(0.00000000000001))).rjust(20, ' '), self.TOAsigma, self._Observatory)
         kwpars = ''
-        for key in [k for k in sorted(self.flags.keys(), reverse=True) if not k == 'EQUAD' and not k == 'JUMPflag' and not k =='EMAX' and not k == 'EFAC']:
+        for key in [k for k in sorted(self.flags.keys(), reverse=True) if not k == 'EQUAD' and not k == 'JUMPflag' and not k =='EMAX' and not k == 'EFAC' and not k == 'EMIN']:
             kwpars += ' -%s %s ' % (key, self.flags[key])
-        return fmtstr+kwpars
+        result = fmtstr+kwpars
+        if result[14] == '.':
+            result =  result[:14] + '_' + result[15:]
+        return result
 
 
 class TOAcommand(object):
@@ -175,8 +183,10 @@ class TOAcommand(object):
 class TOAfile(object):
     """[OutDated, use the TOAfile class in tempo module] A class for read/operate TOA files. """ 
     def __init__(self, file, kws={'JUMPflag':False}, F0=None): 
+        self.toafile = file
         self.list = []
-        #self.PHASEJUMPS = {}
+        self.cmdlist = []
+        self.PHASEJUMPS = {}
         self.EQUADvalues = {}
         self.start = Decimal('1000000')
         self.end = Decimal('0')
@@ -186,6 +196,7 @@ class TOAfile(object):
             lines = text.split('\n')
             toagroup = []
             SKIPflag = False
+            PHASEJUMPFlag = False
             for l in lines:
                 s =l.strip().find('INCLUDE')
                 if len(l) == 0:pass
@@ -198,13 +209,17 @@ class TOAfile(object):
                     if tf.start < self.start: self.start = tf.start
                     if tf.end > self.end: self.end = tf.end
                     self.list.extend(tf.list)
+                    self.cmdlist.extend(tf.cmdlist)
                 elif len(l) < 25:
                     if len(toagroup) > 0:self.list.append(toagroup)
                     command = TOAcommand(*l.split())
+                    self.cmdlist.append(command)
                     toagroup = []
                     if command.cmd == 'INFO':
                         INFO = command.args[0]
                         kws.update({'i': INFO})
+                        if PHASEJUMPFlag:
+                            self.PHASEJUMPS[INFO] = PHASE
                         self.list.append(command)#ignore
                     elif command.cmd == 'JUMP':
                         kws['JUMPflag'] = not kws['JUMPflag']
@@ -216,42 +231,38 @@ class TOAfile(object):
                         #self.list.append(command)#ignore
                     elif command.cmd == 'PHASE':
                         PHASE = float(command.args[0])
-                        #if F0 == None:
-                            #print 'Need F0 to caculate phase offset.'
-                            #raise Error
-                        #Offset = Decimal(str(command.args[0]))/self.F0/86400
-                        #if kws.has_key('p'):
-                            #NewOffset = kws['p'] + Offset
-                            #if NewOffset == 0:
-                                #del kws['p']
-                            #else:
-                                #kws['p'] = NewOffset
-                        #else:
-                            #kws['p'] = Offset 
                         if kws.has_key('padd'):
                             NewPhase = kws['padd'] + PHASE
                             if NewPhase == 0.:
                                 del kws['padd']
+                                PHASEJUMPFlag = False
                             else:
                                 kws['padd'] = NewPhase
                         else:
                             kws['padd'] = PHASE
+                            PHASEJUMPFlag = True
                     elif command.cmd == 'EQUAD':
                         EQUAD = Decimal(command.args[0])
+                        kws.update({'EQUAD':EQUAD})
                         if not kws.has_key('f'):
                             key = 1
                             self.EQUADvalues[str(key)]=EQUAD
                         else:
-                            key += 1
+                            key = int(kws['f']) + 1
                             self.EQUADvalues[str(key)]=EQUAD
                         kws.update({'f':str(key)})
                     elif command.cmd == 'EMAX':
                         self.EMAX = Decimal(command.args[0])
                         kws['EMAX'] = self.EMAX
                         self.list.append(command)#ignore
+                    elif command.cmd == 'EMIN':
+                        self.EMIN = Decimal(command.args[0])
+                        kws['EMIN'] = self.EMIN
+                        self.list.append(command)#ignore
                     elif command.cmd == 'EFAC':
                         self.EFAC = Decimal(command.args[0])
                         self.list.append(command)#ignore
+                        kws['EFAC'] = self.EFAC
                     elif command.cmd == 'SKIP':
                         SKIPflag = True
                     elif command.cmd == 'NOSKIP':
@@ -259,64 +270,352 @@ class TOAfile(object):
                     else:
                         self.list.append(command)#ignore
                 else:
+                    if len(self.cmdlist) == 0 or not self.cmdlist[-1] == 'TOAlist':
+                        self.cmdlist.append('TOAlist')
                     if not SKIPflag:
                         if not file.find(' ') == -1:
                             file = ''
                         try:
                             t= TOA(l, file = file, **kws)
-                        except:
+                        except TypeError:
                             print 'Probamatic line: ', l
                             print 'from file %s' % file
-                        if self.__dict__.has_key('EMAX'): 
-                            if self.__dict__.has_key('EFAC'):
-                                if t.TOAsigma * self.EFAC > self.EMAX:
-                                    continue 
-                                else:toagroup.append(t)
-                            else:
-                                if t.TOAsigma > self.EMAX:
-                                    continue
-                                else:toagroup.append(t)
-                        else:
-                            toagroup.append(t)
+                        if t.flags.has_key('EMAX'): 
+                            if float(t.TOAsigma) > float(t.flags['EMAX']):
+                                continue
+                        #if t.flags.has_key('f'):
+                            #if self.EQUADvalues.has_key(t.flags['f']):
+                                #t.TOAsigma = sqrt(t.TOAsigma**2 + self.EQUADvalues[t.flags['f']]**2)
+                            #print 'here: ', t.flags['i'], self.EQUADvalues[t.flags['f']]
+                        if t.flags.has_key('EMIN'): 
+                            if t.TOAsigma < Decimal(t.flags['EMIN']):
+                                t.TOAsigma = Decimal(t.flags['EMIN'])
+                        if t.flags.has_key('EQUAD'):
+                            t.TOAsigma = sqrt(t.TOAsigma**2 + t.flags['EQUAD']**2)
+
+                        if t.flags.has_key('EFAC'):
+                            t.TOAsigma = Decimal(t.TOAsigma) * t.flags['EFAC']
+                            #if TOAsigma * self.EFAC > self.EMAX:
+                                #continue 
+                            #else:toagroup.append(t)
+                        toagroup.append(t)
                         if t.TOA < self.start:self.start = t.TOA
                         if t.TOA > self.end: self.end = t.TOA
                     else:
                         pass # skipped
             if len(toagroup) > 0:self.list.append(toagroup)
-        def __str__(self):
-            return '\n'.join([str(x) for x in self.list])
+        toalist = []
+        for toa in self.list:
+            if not type(toa) == TOAcommand:
+                toalist.extend(toa)
+        self.toalist = toalist
+        self.issubgroup = False
+        self.inspect()
+
+    def inspect(self):
+        commandgrps = {}
+        subcmdgrp = []
+        info = 'Untaged'
+        for c in self.cmdlist:
+            if type(c) == TOAcommand:
+                if not c.cmd.find('SKIP') == -1:continue
+                if c.cmd in ['EQUAD', 'EMAX', 'EFAC', 'EMIN']:
+                #if c.cmd in ['EQUAD', 'EMAX']:
+                    #subcmdgrp.append(c)
+                    pass
+                if c.cmd == 'INFO':info = c.args[0]
+                if c.cmd == 'MODE':self.MODE = c.args[0]
+            else:
+                #if not len(subcmdgrp) == 0:
+                if not commandgrps.has_key(info):
+                    commandgrps[info] = subcmdgrp
+                else:
+                    commandgrps[info].extend(subcmdgrp)
+                subcmdgrp = []
+        self.commandgrps = commandgrps
+        toagrp = {}
+        jumpgrp = {}
+        phasegroups = {}
+        othergroups = {}
+        toalist = self.toalist
+        for i in range(len(toalist)):
+            toa = toalist[i]
+            #if not toa.flags.has_key('i'):
+                #info = 'Untaged'
+            #else:
+                #info = toa.flags['i']
+            #if not toa.flags.has_key('jump'):
+                #jump = 0
+            #else:
+                #jump = toa.flags['jump']
+            info = 'Untaged'
+            jump = 0
+            for key in toa.flags:
+                if key == 'i':
+                    info = toa.flags['i']
+                elif key == 'jump':
+                    jump = toa.flags['jump']
+                elif key == 'padd':
+                    phase = float(toa.flags['padd'])
+
+                elif toa.flags.has_key('padd'):
+                    phase = float(toa.flags['padd'])
+                    if phasegroups.has_key(info):
+                        if not phasegroups[info] == phase:raise "different phase jump for the same info group %s" % info
+                    else:
+                        phasegroups[info] = phase
+                else:
+                    keyword = '-'+key+' '+str(toa.flags[key])
+                    if othergroups.has_key(keyword):
+                        othergroups[keyword].append(i)
+                    else:
+                        othergroups[keyword] = [i]
+            if not toagrp.has_key(info):
+                toagrp[info] = [i]
+            else:
+                toagrp[info].append(i)
+            if not jumpgrp.has_key(jump):
+                jumpgrp[jump] = [i]
+            else:
+                jumpgrp[jump].append(i)
+        self.groups = toagrp
+        self.jumpgroups = jumpgrp
+        self.phasegroups = phasegroups
+        self.othergroups = othergroups
+        #print jumpgrp
+
+        self.matchdict = {}
+        self.firstgrp = None
+        self.grouporder = []
+        for grp in self.groups.keys():
+            self.matchdict[grp] = []
+            if self.jumpgroups.has_key(0):
+                if set(self.jumpgroups[0]) <= set(self.groups[grp]):
+                    self.matchdict[grp].append(0)
+                    self.firstgrp = grp
+                    self.grouporder.append(grp)
+        if self.firstgrp == None:
+            self.matchdict['notag'] = [0]
+            self.firstgrp = 'notag'
+            self.grouporder.append('notag')
+
+        for jpgrp in [k for k in self.jumpgroups.keys() if not k == 0]:
+            tagged = False
+            for grp in self.groups.keys():
+                if set(self.jumpgroups[jpgrp]) <= set(self.groups[grp]) and tagged == False:
+                    self.matchdict[grp].append(jpgrp)
+                    tagged = True
+                    if not self.grouporder[-1] == grp and not grp in self.grouporder:
+                        self.grouporder.append(grp)
+            if tagged == False:
+                if not self.matchdict.has_key('notag'):
+                    self.matchdict['notag'] = [jpgrp]
+                else:
+                    self.matchdict['notag'].append(jpgrp)
+                if not self.grouporder[-1] == 'notag' and not 'notag' in self.grouporder:
+                    self.grouporder.append('notag')
+        if self.matchdict.has_key('notag') and any([len(self.matchdict[k])==0 for k in self.matchdict.keys()]):
+            self.matchnotag = {}
+            for jpgrp in self.matchdict['notag']:
+                for grp in [k for k in self.matchdict.keys() if len(self.matchdict[k]) == 0 ]:
+                    #print grp, self.matchdict[grp],len(self.matchdict[grp])
+                    if set(self.groups[grp]) < set(self.jumpgroups[jpgrp]):
+                        if not self.matchnotag.has_key(jpgrp):
+                            self.matchnotag[jpgrp] = [grp]
+                        else:
+                            self.matchnotag[jpgrp].append(grp)
+            alluntagged =set()
+            for s in [set(self.groups[grp]) for grp in self.matchnotag[jpgrp] for jpgrp in self.matchdict['notag']]:
+                alluntagged |= s
+            alluntaggedjp =set()
+            for s in [set(self.jumpgroups[jpgrp]) for jpgrp in self.matchdict['notag']]:
+                alluntaggedjp |= s
+            if not  alluntagged == alluntaggedjp:
+                print self.matchnotag, self.matchdict
+                print alluntagged , alluntaggedjp
+                self.groups['UntagedJump'] = list(alluntaggedjp - alluntagged)
+
+            self.jumpdict = self.matchdict.copy()
+            for jumpgrp in self.matchnotag.keys():
+                for grp in self.matchnotag[jumpgrp]:
+                    self.jumpdict[grp] = [jumpgrp]
+            self.jumpdict.pop('notag')
+        if not self.toalist[0].format == 'Tempo2':
+            self.format = 'Tempo1'
+        else:
+            self.format = 'Tempo2'
+
+
+    def subgroup(self, groups=None):
+        from copy import deepcopy
+        new = deepcopy(self)
+        if groups == None:
+            return new
+        elif not type(groups) == list:
+            raise "Expecting groups to be list by get %s" % type(groups)
+        new.start = Decimal('1000000')
+        new.end = Decimal('0')
+        new.list = []
+        nextjump = 0
+        newjumpgrp = {}
+        subcmdgrp = []
+        subtoalist = []
+        EQUADgroups = []
+        for c in self.list:
+            if type(c) == TOAcommand:
+                if not c.cmd.find('SKIP') == -1:continue
+                if c.cmd in ['EQUAD', 'EMAX', 'EFAC', 'EMIN']:
+                    subcmdgrp.append(c)
+                if c.cmd == 'INFO':
+                    info = c.args[0]
+                    subcmdgrp.append(c)
+                if not len(subtoalist) == 0:
+                    new.list.append(subtoalist)
+                    subtoalist = []
+            else:
+                if not len(subcmdgrp) == 0:
+                    if info in groups:
+                        new.list.extend(subcmdgrp)
+                    subcmdgrp = []
+                for t in c:
+                    if t.flags.has_key('i') and t.flags['i'] in groups:
+                        if t.flags.has_key('jump'):
+                            i = int(t.flags['jump'])
+                        else:
+                            i = 0
+                        if newjumpgrp.has_key(i):
+                            if newjumpgrp[i] == 0:
+                                try:
+                                    t.flags.pop('jump')
+                                except:pass
+                            else:
+                                t.flags['jump'] = newjumpgrp[i]
+                        else:
+                            newjumpgrp[i] = nextjump
+                            nextjump += 1
+                            t.flags['jump'] = newjumpgrp[i]
+                        subtoalist.append(t)
+                        if t.TOA < new.start:new.start = t.TOA
+                        if t.TOA > new.end: new.end = t.TOA
+                        if t.flags.has_key('f') and not t.flags['f'] in EQUADgroups:
+                            EQUADgroups.append(t.flags['f'])
+                    else:
+                        #print t.flags
+                        pass
+        if not len(subtoalist) == 0:
+            new.list.append(subtoalist)
+            subtoalist = []
+        toalist = []
+        for toa in new.list:
+            if not type(toa) == TOAcommand:
+                toalist.extend(toa)
+        new.toalist = toalist
+        for key in new.EQUADvalues.keys():
+            if not key in EQUADgroups:
+                new.EQUADvalues.pop(key)
+        new.inspect()
+        new.newjumpgrp = newjumpgrp
+        new.newjumpgroup = {}
+        for key in newjumpgrp:
+            new.newjumpgroup[newjumpgrp[key]] = key
+        if new.toalist[0].__dict__.has_key('npulse'):
+            new.npulse = []
+            for i in range(len(new.toalist)):
+                t = new.toalist[i]
+                new.npulse.append(t.npulse)
+        new.issubgroup = True
+        return new
+
+        
+
+
+    def __str__(self):
+        #text = ''
+        #for x in self.list:
+            #if type(x) == TOAcommand:
+                #text += str(x)+'\n'
+            #else:
+                #for t in x:
+                    #text += str(t)+'\n'
+        #return text
+        return  '\n'.join([str(x) for x in self.list])
+    def tempo1fmt(self, format = 'Princeton'):
+        """convert TOA file to tempo1 format, use the format keyword to define which version (Princeton, Parkes or ITOA) """
+        for toa in self.toalist:
+            toa.format = format
+        text = ''
+        if self.__dict__.has_key('MODE'):
+            text += 'MODE %s\n' % self.MODE
+        phaseoffset = 0. 
+        for grp in self.grouporder:
+            if not grp == 'notag':
+                if grp in self.phasegroups.keys():
+                    if not phaseoffset == self.phasegroups[grp]:
+                        text += 'PHASE %s\n' % (self.phasegroups[grp] - phaseoffset)
+                        phaseoffset = self.phasegroups[grp]
+                else:
+                    if not phaseoffset == 0.:
+                        text += 'PHASE %s\n' % (0. - phaseoffset)
+                        phaseoffset = 0.
+
+                text += 'INFO %s\n' % (grp)
+                for cmd in self.commandgrps[grp]:
+                    text += '%s\n' % cmd
+                for jpgrp in self.matchdict[grp]:
+                    if not jpgrp == 0:
+                        text += 'JUMP\n'
+                    for i in self.jumpgroups[jpgrp]:
+                        toa = self.toalist[i]
+                        oldfmt = toa.format
+                        toa.format = format
+                        text += '%s\n' % str(toa)
+                        toa.format = oldfmt
+                    if not jpgrp == 0:
+                        text += 'JUMP\n'
+            else:
+                for jpgrp in self.matchdict['notag']:
+                    text += 'JUMP\n'
+                    for grp in self.matchnotag[jpgrp]:
+                        if grp in self.phasegroups.keys():
+                            if not phaseoffset == self.phasegroups[grp]:
+                                text += 'PHASE %s\n' % (self.phasegroups[grp] - phaseoffset)
+                                phaseoffset = self.phasegroups[grp]
+                        else:
+                            if not phaseoffset == 0.:
+                                text += 'PHASE %s\n' % (0. - phaseoffset)
+                                phaseoffset = 0.
+                        text += 'INFO %s\n' % (grp)
+                        for cmd in self.commandgrps[grp]:
+                            text += '%s\n' % cmd
+                        for i in self.groups[grp]:
+                            toa = self.toalist[i]
+                            oldfmt = toa.format
+                            toa.format = format
+                            text += '%s\n' % str(toa)
+                            toa.format = oldfmt
+                    text += 'JUMP\n'
+
+        return text
+
+
+
     def tempo2fmt(self):
         """convert TOA file to tempo2 format"""
         fmtstr = """
 """
         fmtstr += '\n'
-        #toalist = [l for l in self.list if not isinstance(l,TOAcommand)]
-        #toas = []
-        #for l in toalist:
-            #toas.extend(l)
-        #toas.sort(key = lambda x:x.TOA)
         for toas in self.list:
             if isinstance(toas, (list,tuple)):
                 fmtstr += '\n'.join([t.tempo2fmt() for t in toas])
                 fmtstr += '\n'
-            elif isinstance(toas, TOAcommand):
+            elif isinstance(toas, TOAcommand) and not toas.cmd in ['EMAX', 'EFAC', 'EQUAD', 'MODE', 'EMIN']:
                 fmtstr += '%s\n' % (toas)
 
 
-        #for l in self.list:
-            #if isinstance(l, TOAcommand):
-                #fmtstr += str(l)
-                #fmtstr += '\n'
-            #else:
-                #fmtstr += '\n'.join([t.tempo2fmt() for t in l])
-                #fmtstr += '\n'
-        #for key in self.PHASEJUMPS.keys():
-            #fmtstr += 'PHASE %d %s 0\n' % (key, self.PHASEJUMPS[key])
         Extrastr = 'FORMAT 1\nMODE 1\n'
-        for key in self.EQUADvalues.keys():
-            Extrastr += 'T2EQUAD -f %s %s\n' % (key, self.EQUADvalues[key])
+        #for key in self.EQUADvalues.keys():
+            #Extrastr += 'T2EQUAD -f %s %s\n' % (key, self.EQUADvalues[key])
         return Extrastr + fmtstr
-        #return '\n'.join([fmtstr] + self.list)
 
 
 #from datatools.timing import ephemeris
@@ -639,13 +938,17 @@ paramap = {
         ' O008':'JUMP_8',
         ' O009':'JUMP_9',
         }
-for i in range(100):
+for i in range(200):
     key = 'DX' + str(i).rjust(3,'0')
     value = 'DMX_' + str(i).rjust(4,'0')
     paramap[key] = value
-for i in range(100):
+for i in range(200):
     key = 'D1' + str(i).rjust(3,'0')
     value = 'DMX1_' + str(i).rjust(4,'0')
+    paramap[key] = value
+for i in range(10,1000):
+    key = ' O' + str(i).rjust(3,'0')
+    value = 'JUMP_' + str(i)
     paramap[key] = value
 
 class PARfile(object):
@@ -669,13 +972,22 @@ class PARfile(object):
         self.manifest = []
         self.parameters = {} # a place to hold the fit flag for each fitable parameter
         self.file = open(file, 'r')
+        self.jumps = {0:Decimal(0)}
+        self.TempoVersion = 1
         for lines in self.file.readlines():
             items = lines.split()
             if len(items) == 0:pass
             elif items[0] == '#':pass
             elif items[0][0] == '#':pass
+            elif items[0]== 'C':pass
             elif len(items) == 2 and not items[0] in ['SINI', 'M2', 'XDOT']: 
                 self.__dict__[items[0]] = floatify(items[1])
+                self.manifest.append(items[0])
+            elif items[0] in ['START', 'FINISH']:
+                if len(items)>2 and items[2] == '1':
+                    self.__dict__[items[0]] = items[1] + ' ' + '1'
+                else:
+                    self.__dict__[items[0]] = value
                 self.manifest.append(items[0])
             elif len(items) == 3 or items[0] in ['SINI', 'M2', 'XDOT']:
                 value = floatify(items[1])
@@ -713,7 +1025,18 @@ class PARfile(object):
                 self.parameters.update({items[0]:fitflag})
                 self.__dict__[items[0]] = [value, error]
                 self.manifest.append(items[0])
-            elif len(items) == 5 and items[0] == 'JUMP':
+                if not items[0].find('JUMP') == -1:
+                    if not items[0].find('_') == -1:
+                        try:
+                            self.jumps[int(items[0].split('_')[-1])] = value
+                        except:
+                            self.jumps[items[0].split('_')[-1]] = value
+                    else:
+                        try:
+                            self.jumps[int(items[2])] = floatify(items[3])
+                        except:
+                            self.jumps[str(items[2])] = floatify(items[3])
+            elif len(items) >= 5 and items[0] == 'JUMP':
                 name = ' '.join(items[:3])
                 self.manifest.append(name)
                 value = floatify(items[3])
@@ -721,6 +1044,14 @@ class PARfile(object):
                 error = ''
                 self.__dict__[name] = [value, error]
                 self.parameters.update({name:fitflag})
+                try:
+                    if items[1] == '-jump':
+                        self.jumps[int(items[2])] = value
+                    else:
+                        self.jumps[' '.join(items[1:3])] = value
+                except:
+                    self.jumps[' '.join(items[1:3])] = value
+                self.TempoVersion = 2
             else:
                 print items
                 raise IndexError
@@ -735,29 +1066,42 @@ class PARfile(object):
         if self.__dict__.has_key('PSR'):
             self.psrname = self.PSR
         elif self.__dict__.has_key('PSRJ'): 
-            self.psrname = 'J'+self.PSRJ
+            self.psrname = self.PSRJ
         elif self.__dict__.has_key('PSRB'): 
-            self.psrname = 'B'+self.PSRB
+            self.psrname = self.PSRB
         else:
             raise 'Cant Find PSR name'
         self.file.close()
+        if self.__dict__.has_key('BINARY') and self.BINARY == 'T2':self.TempoVersion = 2
     def write(self, fn=None):
         if fn == None:
             fn = self.parfile
         with open(fn, 'w') as f:
             text = ''
             for item in self.manifest:
-                if item in self.parameters.keys():
+                if item in self.parameters.keys() :
                     text += '%s\t%s\t%s\t%s\n' % (item, self.__dict__[item][0], self.parameters[item] ,self.__dict__[item][1])
                 else:
                     text += '%s\t%s\n' % (item, self.__dict__[item])
             f.write(text)
-    def freezeall(self):
+    def freezeall(self, key=None):
+        import re
+        if key == None:
+            for p in self.parameters:
+                self.parameters[p] = '0'
+        else:
+            for p in self.parameters:
+                if not re.match(key, p) == None:
+                    #print 'freezed parameter %s' % p
+                    self.parameters[p] = '0'
+    def thawall(self, key = None):
+        import re
         for p in self.parameters:
-            self.parameters[p] = '0'
-    def thawall(self):
-        for p in self.parameters:
-            self.parameters[p] = '1'
+            if key == None:
+                self.parameters[p] = '1'
+            else:
+                if not re.match(key, p) == None:
+                    self.parameters[p] = '1'
 
     def matrix(self, timfile, TempoVersion=1):
         if self.BINARY == 'DDS':
@@ -765,7 +1109,7 @@ class PARfile(object):
         if TempoVersion == 1:
             from numpy.core.records import fromfile
             os.system('tempo -j -f %s %s > tmplog' % (self.parfile, timfile))
-            bpf = PARfile(self.PSR + '.par')
+            bpf = PARfile(self.psrname + '.par')
             par = []
             self.err = []
             cov = []
@@ -841,10 +1185,11 @@ class PARfile(object):
                     for j in range(i,m):
                         cov[i][j] = cov[j][i]
                 self.covariance = np.matrix(cov)
-                self.Nfac = (int(sqrt(m))+1)/3
+                self.Nfac = int(sqrt(m))+1
                 self.par = [0]*m
                 #print self.covariance[:2,:2]
         else:
+            print 'TempoVersion: ', TempoVersion
             raise TempoVersion
     def randomnew(self, stepsize=1.):
         new = deepcopy(self)
@@ -859,11 +1204,153 @@ class PARfile(object):
                 new.__dict__[p][0] = ':'.join([dd,mm,ss])
             elif p == 'SINI':
                 pass
+            #elif p == 'PAASCNODE':
+                #new.__dict__[p][0] = new.__dict__[p][0] + Decimal(np.random.rand()*10/self.Nfac*stepsize)
             else:
                 #new.__dict__[p][0] = new.__dict__[p][0] + Decimal(str(err[i]*float(str(new.__dict__[p][1]))/self.Nfac))
                 new.__dict__[p][0] = new.__dict__[p][0] + Decimal(repr(err[i]*self.err[i]/self.Nfac*stepsize))
 
         return new
+    def convert(self, TempoVersion):
+        """Convert tempo1 parfile to tempo2 version, or vise versa """
+        if self.TempoVersion == TempoVersion:pass
+        else:
+            if TempoVersion == 1:
+                self.TempoVersion = 1
+                for i in range(len(self.manifest)):
+                    par = self.manifest[i]
+                    if not par.find('JUMP') == -1:
+                        j = par.split()[-1]
+                        newjumppar = 'JUMP_' + j
+                        self.manifest[i] = newjumppar
+                        self.__dict__[newjumppar] = self.__dict__[par]
+                        del self.__dict__[par]
+                        self.parameters[newjumppar] = self.parameters[par]
+                        del self.parameters[par]
+                if not self.CLK.find('UTC') == -1:
+                    self.CLK = 'TT(BIPM)'
+                if self.BINARY == 'T2':
+                    self.BINARY = 'DD'
+                    self.E = self.ECC
+                    del self.__dict__['ECC']
+                    self.parameters['E'] = self.parameters['ECC']
+                    del self.parameters['ECC']
+                    i = self.manifest.index('ECC')
+                    self.manifest[i] = 'E'
+                    self.PAASCNODE = self.KOM[0] 
+                    del self.__dict__['KOM']
+                    i = self.manifest.index('KOM')
+                    self.manifest[i] = 'PAASCNODE'
+                    del self.parameters['KOM']
+                    self.SINI = [sin(float(self.KIN[0])/180.*pi), abs(cos(float(self.KIN[0])/180.*pi)*float(self.KIN[1])/180.*pi)]
+                    i = self.manifest.index('KIN')
+                    #self.manifest[i] = 'SINI'
+                    self.manifest.pop(i)
+                    inc = float(self.KIN[0])/180.*pi
+                    self.parameters['SINI'] = 1
+                    del self.parameters['KIN']
+                    del self.__dict__['KIN']
+                    fac = 0.0001536
+                    mu = sqrt(float(self.PMRA[0])**2 + float(self.PMDEC[0])**2)
+                    thetamu = 90. - atan(float(self.PMDEC[0])/float(self.PMRA[0]))*180./pi
+                    Omega = float(self.PAASCNODE)
+                    x = float(self.A1[0])
+                    #print 'mu, thetamu, x', mu, thetamu, x
+                    xdot = fac * x * mu * (cos(inc)/sin(inc)) * sin((thetamu-Omega)*pi/180.)
+                    self.__dict__['XDOT'] = (xdot, 0.1*xdot)
+                    self.manifest.append('XDOT')
+                    self.parameters['XDOT'] = '1'
+                    for par in ['EPHVER', 'MODE', 'UNITS', 'TIMEEPH', 'DILATEFREQ', 'PLANET_SHAPIRO', 'T2CMETHOD', 'CORRECT_TROPOSPHERE', 'CHI2R', 'TRES', 'NTOA', 'POSEPOCH']:
+                        try:
+                            self.manifest.pop(self.manifest.index(par))
+                        except:pass
+                    if 'DMX_0001' in self.manifest:
+                        for par in self.manifest:
+                            if not par.find('DMX_') == -1:
+                                par1 = 'DMX1_' + par.split('_')[-1]
+                                self.__dict__[par1] = (Decimal(0), Decimal(0))
+                                self.parameters[par1] = '0'
+                                self.manifest.append(par1)
+                    DMXlist = ['DMX']
+                    self.__dict__['DMX'] = '0.10000000D+02'
+                    JUMPlist = []
+                    manifest = self.manifest[:]
+                    for par in self.manifest:
+                        if not par.find('DMX_') == -1:
+                            i = par.split('_')[-1]
+                            DMXlist.append('DMX_'+i)
+                            DMXlist.append('DMX1_'+i)
+                            DMXlist.append('DMXR1_'+i)
+                            DMXlist.append('DMXR2_'+i)
+                            #DMXlist.append('DMXF1_'+i)
+                            #DMXlist.append('DMXF2_'+i)
+                            #self.__dict__['DMXF1_'+i] = Decimal('700.')
+                            #self.__dict__['DMXF2_'+i] = Decimal('3100.')
+                            manifest.pop(manifest.index(par))
+                        elif not par.find('DMX') == -1:
+                            manifest.pop(manifest.index(par))
+                        elif not par.find('JUMP') == -1:
+                            manifest.pop(manifest.index(par))
+                            JUMPlist.append(par)
+                        else:
+                            pass
+                    self.manifest = manifest
+                    JUMPlist.sort(key = lambda x:int(x.split('_')[-1]))
+                    self.manifest.extend(DMXlist)
+                    self.manifest.extend(JUMPlist)
+                    #self.manifest = list(set(self.manifest))
+                    
+            else:
+                self.TempoVersion = 2
+                for i in range(len(self.manifest)):
+                    par = self.manifest[i]
+                    if not par.find('JUMP') == -1:
+                        j = par.split('_')[-1]
+                        newjumppar = 'JUMP -jump ' + j
+                        self.manifest[i] = newjumppar
+                        self.__dict__[newjumppar] = self.__dict__[par]
+                        del self.__dict__[par]
+                        self.parameters[newjumppar] = self.parameters[par]
+                        del self.parameters[par]
+                if self.BINARY == 'DD' and self.__dict__.has_key('PAASCNODE'):
+                    self.BINARY = 'T2'
+                    self.ECC = self.E
+                    del self.__dict__['E']
+                    self.parameters['ECC'] = self.parameters['E']
+                    del self.parameters['E']
+                    i = self.manifest.index('E')
+                    self.manifest[i] = 'ECC'
+                    self.KOM = (self.PAASCNODE, self.PAASCNODE/10)
+                    del self.__dict__['PAASCNODE']
+                    i = self.manifest.index('PAASCNODE')
+                    self.manifest[i] = 'KOM'
+                    #del self.parameters['PAASCNODE']
+                    self.parameters['KOM'] = '1'
+                    #self.SINI = [sin(float(self.KIN[0])/180.*pi), abs(cos(float(self.KIN[0])/180.*pi)*float(self.KIN[1])/180.*pi)]
+                    i = self.manifest.index('SINI')
+                    self.manifest[i] = 'KIN'
+                    inc = asin(float(self.SINI[0]))*180./pi
+                    self.parameters['KIN'] = 1
+                    self.__dict__['KIN'] = [inc, float(self.__dict__['SINI'][1])/cos(inc/180.*pi)*180./pi]
+                    del self.parameters['SINI']
+                    self.SINI = 'KIN'
+                    del self.__dict__['XDOT']
+                    self.manifest[self.manifest.index('XDOT')] = 'SINI'
+                    #fac = 0.0001536
+                    #mu = sqrt(float(self.PMRA[0])**2 + float(self.PMDEC[0])**2)
+                    #thetamu = 90. - atan(float(self.PMDEC[0])/float(self.PMRA[0]))*180./pi
+                    #Omega = float(self.PAASCNODE)
+                    #x = float(self.A1[0])
+                    #print 'mu, thetamu, x', mu, thetamu, x
+                    #xdot = fac * x * mu * (cos(inc)/sin(inc)) * sin((thetamu-Omega)*pi/180.)
+                    #self.__dict__['XDOT'] = (xdot, 0.1*xdot)
+                    #self.manifest.append('XDOT')
+                    #self.parameters['XDOT'] = '1'
+
+
+
+
+
 
 
 #get DMX parameters from a parfile
@@ -886,8 +1373,10 @@ def getDMX(pf):
                         DMX[int(pars[4:])] = pf.__dict__[pars][0] + pf.__dict__['DM']
                         DMXErr[int(pars[4:])] = pf.__dict__[pars][1] 
                     except:
-                        print pars , pf.__dict__[pars]
-                        raise stop
+                        #print pars , pf.__dict__[pars]
+                        #raise stop
+                        DMX[int(pars[4:])] = pf.__dict__[pars] + pf.__dict__['DM']
+                        DMXErr[int(pars[4:])] = 0
                 else:
                     DMX1[int(pars[5:])] = pf.__dict__[pars][0]
         elif not pars.find('DMXR') == -1 and len(pars)>=4:
@@ -899,5 +1388,531 @@ def getDMX(pf):
 
     DMXList = [DMX[x] for x in DMX]
     return DMX, DMXErr, DMXR1, DMXR2
+
+
+import tempfile
+class model(PARfile):
+    """ An extension of the PARfile object, which stores the methods and results of a tempo 1 or 2 fitting. """
+
+    def __init__(self, parfile):
+        super(self.__class__, self).__init__(parfile)
+        self.NITS = '1'
+        tmpparfile = tempfile.NamedTemporaryFile(mode='w', suffix=".par", delete=False).name
+        self.write(tmpparfile)
+        self.parfile = tmpparfile
+        if self.__dict__.has_key('DMX') or self.__dict__.has_key('DMX_0001'):
+            self.dmxlist = getDMX(self)
+
+    def tempofit(self, toafile, pulsefile=None):
+        from numpy import mean, array, fromfile, savetxt
+        self.START = toafile.start
+        self.FINISH = toafile.end
+        self.toafile = toafile
+        if self.TempoVersion == 2:
+            self.convert(1)
+            self.write()
+        tmppulsefile = tempfile.NamedTemporaryFile(mode='w', suffix='.pls', delete = False).name
+        if toafile.issubgroup or not toafile.format == 'Tempo1':
+            tmptimfile = tempfile.NamedTemporaryFile(mode='w', suffix=".tim", delete=False).name
+            tf = open(tmptimfile, 'w')
+            tf.write(toafile.tempo1fmt())
+            tf.close()
+            toafile.toafile = tmptimfile
+        if toafile.issubgroup:
+            jumpdict = {}
+            firstgrp = toafile.newjumpgroup[0]
+            if firstgrp == 0:
+                self.JUMP_0 = (Decimal(0), Decimal(0))
+            self.jumps = {}
+            for newjp in toafile.newjumpgroup.keys():
+                if not newjp == 0:
+                    oldjp = toafile.newjumpgroup[newjp]
+                    try:
+                        jumpdict['JUMP_%d' % newjp] = (self.__dict__['JUMP_%d' % oldjp][0] - self.__dict__['JUMP_%d' % firstgrp][0], self.__dict__['JUMP_%d' % oldjp][1] + self.__dict__['JUMP_%d' % firstgrp][1] )
+                    except:
+                        print oldjp, newjp
+                        print jumpdict
+                        print self.__dict__['JUMP_%d' % oldjp]
+                    self.jumps[newjp] = jumpdict['JUMP_%d' % newjp][0]
+                    
+            if firstgrp == 0:
+                del self.__dict__['JUMP_0'] 
+            for key in self.__dict__.keys():
+                if not key.find('JUMP_') == -1:
+                    del self.__dict__[key]
+                    self.manifest.pop(self.manifest.index(key))
+                    del self.parameters[key] #clean up old jumps
+            for key in jumpdict.keys():
+                self.__dict__[key] = jumpdict[key]
+                self.manifest.append(key)
+                self.parameters[key] = '1' #default to be fitted
+
+        DMX, DMXErr, DMXR1, DMXR2 = self.dmxlist   
+        for key in DMXR1:
+            if DMXR2[key] < self.START or DMXR1[key] > self.FINISH:
+                self.parameters['DMX_' + str(key).rjust(4,'0')] = '0'
+            else:
+                pass
+                #self.parameters['DMX_' + str(key).rjust(4,'0')] = '1'
+
+        self.groups = toafile.groups.copy()
+        self.jumpgroups = toafile.jumpgroups.copy()
+        self.write()
+        if not len(self.jumps) == len(toafile.jumpgroups):
+            print "Number of jumps in parfile (%s) doesn't match the number of jumps in the toafile (%s)" % (len(self.jumps), len(toafile.jumpgroups) - 1)
+            print "This could be a problem."
+        if not set(self.jumps.keys()) <= set(toafile.jumpgroups.keys()):
+            print "Jump group flag mismatch!"
+            print "Jump groups defined in parfile and not in toafile: %s" % (set(self.jumps.keys()) - set(toafile.jumpgroups.keys()))
+            print "Jump groups defined in toafile and not in parfile: %s" % (set(toafile.jumpgroups.keys()) - set(self.jumps.keys()))
+        if pulsefile == None:
+            if toafile.__dict__.has_key('npulse'):
+                savetxt(tmppulsefile, toafile.npulse, fmt='%.0f')
+                line = getoutput("tempo  -f %s %s -ni %s -j| grep 'Chisqr/nfree'" % (self.parfile, toafile.toafile, tmppulsefile))
+                #print 'tempo  -f %s %s -ni %s -j' % (self.parfile, toafile.toafile, tmppulsefile)
+            else:
+                line = getoutput("tempo -f %s %s -j -no %s| grep 'Chisqr/nfree'" % (self.parfile, toafile.toafile, tmppulsefile))
+                #print tmppulsefile
+        else:
+            line = getoutput("tempo  -f %s %s -ni %s -j| grep 'Chisqr/nfree'" % (self.parfile, toafile.toafile, pulsefile))
+            tmppulsefile = pulsefile
+        self.line = line
+        try:
+            chisq = line.split('/')[1].split(':')[1]
+        except:
+            pass
+        try:
+            dof = int(line.split('/')[2].strip(' ').split()[0])
+        except:
+            dof = len(toafile.list) - len([ x for x in self.parameters])
+        try:
+            chisq = float(chisq)
+        except:
+            chisq = 9999999.
+        self.chisq = chisq 
+        self.dof = dof
+        #try:
+        self.newpar = PARfile(self.psrname + '.par')
+        #except IndexError:
+            #print self.parfile
+            #print self.toafile.toafile
+
+        data = fromfile(file='resid2.tmp', dtype=[
+            ('N',           'i4'),
+            ('toa',         'f8'),
+            ('res_phase',   'f8'),
+            ('res_sec',     'f8'),
+            ('ophase',      'f8'), 
+            ('rf_bary',     'f8'), 
+            ('weight',      'f8'), 
+            ('err_us',      'f8'), 
+            ('prefit_sec',  'f8'), 
+            ('ddm',         'f8'), 
+            ('M',           'i4'),
+            ])
+
+        self.toa = data[:]['toa']
+        self.freq = data[:]['rf_bary']
+        self.res = data[:]['res_sec']*1.e6
+        self.err = data[:]['err_us']
+        self.phase = data[:]['res_phase']
+        self.ophase = data[:]['ophase']
+        self.prefitres= data[:]['prefit_sec']*1.e6
+        self.prefitphase= self.prefitres*self.phase/self.res
+        self.weight = data[:]['weight']
+        from fileio import readcol
+        npulse= fromfile(tmppulsefile, sep='\n')
+        #npulse= readcol(tmppulsefile, 0)
+        self.toafile.npulse = npulse
+        if self.chisq/self.dof < 2.: #if the fit is ok, then log the pulse number
+            for i in range(len(self.toafile.toalist)):
+                t = self.toafile.toalist[i]
+                try:
+                    t.npulse = npulse[i]
+                except IndexError:
+                    print i, len(npulse)
+            self.toafile.pulsefile = tmppulsefile
+
+        from datatools.MJD import MJD_to_datetime
+        from datetime import timedelta
+        bat = self.toa
+        toalist = self.toafile.toalist
+        for i in range(len(bat)):
+            toa = toalist[i]
+            if MJD_to_datetime(float(toa.TOA)) - MJD_to_datetime(bat[i])  > timedelta(seconds = 600):
+                for m in range(3,1,-1):
+                    print i-m, 'TOA', toalist[i-m].TOA, bat[i-m], (MJD_to_datetime(float(toalist[i-m].TOA)) - MJD_to_datetime(bat[i-m])).seconds, toalist[i-m].TOAsigma, self.err[i-m], toalist[i-m].flags['i'], toalist[i-m].flags['EMAX']
+                print '>', i, 'TOA', toa.TOA, bat[i], (MJD_to_datetime(float(toa.TOA)) - MJD_to_datetime(bat[i])).seconds, toa.TOAsigma, self.err[i], toalist[i].flags['i'], toalist[i].flags['EMAX']
+                print i+1, 'TOA', toalist[i+1].TOA, bat[i+1], (MJD_to_datetime(float(toalist[i+1].TOA)) - MJD_to_datetime(bat[i+1])).seconds, toalist[i+1].TOAsigma, self.err[i+1], toalist[i+1].flags['i'],toalist[i].flags['EMAX']
+
+        for name in self.groups.keys():
+            self._wrms(name)
+
+
+
+    def tempo2fit(self, toafile=None):
+        self.START = toafile.start
+        self.FINISH = toafile.end
+        if toafile == None:
+            toafile = ''
+        if self.TempoVersion == 1:
+            self.convert(2)
+            self.write()
+        if toafile.issubgroup or not toafile.format == 'Tempo2':
+            tmptimfile = tempfile.NamedTemporaryFile(mode='w', suffix=".tim", delete=False).name
+            tf = open(tmptimfile, 'w')
+            tf.write(toafile.tempo2fmt())
+            tf.close()
+            toafile.toafile = tmptimfile
+        self.toafile = toafile
+        if toafile.issubgroup:
+            jumpdict = {}
+            firstgrp = toafile.newjumpgroup[0]
+            if firstgrp == 0:
+                self.JUMP_0 = (Decimal(0), Decimal(0))
+            self.jumps = {}
+            for newjp in toafile.newjumpgroup.keys():
+                if not newjp == 0:
+                    oldjp = toafile.newjumpgroup[newjp]
+                    jumpdict['JUMP -jump %d' % newjp] = (self.__dict__['JUMP -jump %d' % oldjp][0] - self.__dict__['JUMP -jump %d' % firstgrp][0], self.__dict__['JUMP -jump %d' % oldjp][1] + self.__dict__['JUMP -jump %d' % firstgrp][1] )
+                    self.jumps[newjp] = jumpdict['JUMP -jump %d' % newjp][0]
+            if firstgrp == 0:
+                del self.__dict__['JUMP -jump 0'] 
+            for key in self.__dict__.keys():
+                if not key.find('JUMP') == -1:
+                    del self.__dict__[key]
+                    self.manifest.pop(self.manifest.index(key))
+                    del self.parameters[key] #clean up old jumps
+            for key in jumpdict.keys():
+                self.__dict__[key] = jumpdict[key]
+                self.manifest.append(key)
+                self.parameters[key] = '1' #default to be fitted
+
+        #take care of DMX ranges outside and inside the [START, FINISH]
+        DMX, DMXErr, DMXR1, DMXR2 = self.dmxlist   
+        for key in DMXR1:
+            if DMXR2[key] < self.START or DMXR1[key] > self.FINISH:
+                self.parameters['DMX_' + str(key).rjust(4,'0')] = '0'
+            else:
+                pass
+                #self.parameters['DMX_' + str(key).rjust(4,'0')] = '1'
+
+        self.groups = toafile.groups.copy()
+        self.jumpgroups = toafile.jumpgroups.copy()
+        self.jumpgroups.update({0:Decimal(0)}) #set the 0 group to match the jumps initialized in PARfile
+        self.write()
+        if not len(self.jumps) == len(self.jumpgroups) - 1:
+            print "Number of jumps in parfile (%s) doesn't match the number of jumps in the toafile (%s)" % (len(self.jumps), len(self.jumpgroups) - 1)
+            print "This could be a problem."
+        if not set(self.jumps.keys()) < set(self.jumpgroups.keys()):
+            print "Jump group flag mismatch! try othergroups"
+            if set(self.jumps.keys()) - set(toafile.othergroups.keys()) == set([0]):
+                print 'othergroups matches'
+                for key in set(self.jumps.keys())&set(toafile.othergroups.keys()):
+                    self.jumpgroups[key] = toafile.othergroups[key]
+                    toafile.jumpgroups[key] = toafile.othergroups[key]
+            else:
+                print set(self.jumps.keys()) - set(toafile.othergroups.keys())
+                print "Groups defined in parfile and not in toafile: %s" % (set(self.jumps.keys()) - set(self.jumpgroups.keys()))
+                print "Groups defined in toafile and not in parfile: %s" % (set(self.jumpgroups.keys()) - set(self.jumps.keys()))
+
+        line = getoutput("tempo2 -f %s %s -tempo1 -output general2 -s '{bat} {freq} {post} {err} {post_phase} {binphase} {pre} {pre_phase} {npulse}\n' -outfile resid.dat -showchisq > tmp2log1" % (self.parfile, toafile.toafile))
+        line = getoutput("tempo2 -f %s %s -tempo1 -showchisq -newpar > tmp2log2; cat tmp2log2 | grep 'Chisqr/nfree'" % (self.parfile, toafile.toafile))
+        self.line = line
+        chisqlist = []
+        for l in line.split('\n'):
+            l  = l.split()[6]
+            chisq = l.split('/')[0]
+            dof = int(l.split('/')[1])
+            try:
+                chisq = float(chisq)
+            except:
+                chisq = 9999999.
+            chisqlist.append(chisq)
+        #print chisq, dof
+        self.chisq = min(chisqlist)
+        self.dof = dof
+        self.newpar = PARfile('new.par')
+
+        from numpy import genfromtxt
+        data = genfromtxt('resid.dat')
+        self.toa = np.array(data[...,0])
+        self.freq = np.array(data[...,1])
+        self.res = np.array(data[...,2]) * 1.e6
+        self.err = np.array(data[...,3]) 
+        self.phase = np.array(data[...,4])
+        self.ophase = np.array(data[...,5])
+        self.prefitres = np.array(data[...,6]) * 1.e6
+        self.prefitphase = np.array(data[...,7])
+        self.npulse = np.array(data[...,8])
+        self.weight = 1./self.err**2
+        #self.toa = readcol('resid.dat', 0)
+        #self.freq = readcol('resid.dat', 1)
+        #self.res = readcol('resid.dat', 2)
+        #self.err = readcol('resid.dat', 3)*1.e-6
+        #self.postphase = readcol('resid.dat', 4)
+        from datatools.MJD import MJD_to_datetime
+        from datetime import timedelta
+        bat = self.toa
+        toalist = self.toafile.toalist
+        for i in range(len(bat)):
+            toa = toalist[i]
+            if MJD_to_datetime(float(toa.TOA)) - MJD_to_datetime(bat[i])  > timedelta(seconds = 600):
+                for m in range(30,1,-1):
+                    print i-m, 'TOA', toalist[i-m].TOA, bat[i-m], (MJD_to_datetime(float(toalist[i-m].TOA)) - MJD_to_datetime(bat[i-m])).seconds, toalist[i-m].TOAsigma, self.err[i-m], toalist[i-m].flags['i']
+                print '>', i, 'TOA', toa.TOA, bat[i], (MJD_to_datetime(float(toa.TOA)) - MJD_to_datetime(bat[i])).seconds, toa.TOAsigma, self.err[i], toalist[i].flags['i']
+                print i+1, 'TOA', toalist[i+1].TOA, bat[i+1], (MJD_to_datetime(float(toalist[i+1].TOA)) - MJD_to_datetime(bat[i+1])).seconds, toalist[i+1].TOAsigma, self.err[i+1], toalist[i+1].flags['i']
+
+        for name in self.groups.keys():
+            self._wrms(name)
+
+
+    def _wrms(self, *xargs): #must be run after a fit
+        from numpy import mean, sum, nan
+        if len(xargs) == 0:
+            idx = range(len(self.res))
+        else:
+            idx = self.groups[xargs[0]] #take a particular group
+        res = self.res[idx]
+        err = self.err[idx]
+        weight = 1./err**2
+        wmres = sum(res*weight)/sum(weight)
+        mres = mean(res)
+        sumres = sum(res)
+        wsum = sum(weight)
+        try:
+            wrms = sqrt(sum(res**2*weight - wmres*sumres)/wsum)
+            #wrms = sqrt(sum(res**2*weight/wsum - wmres**2))
+        except ValueError:
+            #print sum(res**2*weight - wmres*sumres)
+            #print wsum, wmres, sumres
+            #print res
+            #print ValueError
+            wrms = nan
+        if len(xargs) == 0:
+            self.wrms = {'all':wrms}
+        else:
+            name = xargs[0] 
+            if not self.__dict__.has_key('wrms'):
+                self._wrms()
+            self.wrms[name] = wrms
+
+
+    def plotres(self, *xargs):
+        import datatools.MJD
+        import pylab as plt
+        zero = np.array([0]*len(self.toa))
+        if len(xargs) == 0:
+            TOAdates = [datatools.MJD.MJD_to_datetime(t) for t in self.toa]
+            plt.plot(TOAdates, zero, '--')
+            plt.errorbar(TOAdates, self.res, yerr = self.err, fmt = '.')
+            plt.xlabel('Date')
+            plt.ylabel(r'residual (${\rm \mu}$s)')
+        else:
+            if xargs[0] == 'freq':
+                plt.plot(self.freq, zero, '--')
+                plt.errorbar(self.freq, self.res, yerr = self.err, fmt = '.')
+                plt.xlim(600., 3100.)
+                plt.xlabel('Frequency (MHz)')
+                plt.ylabel(r'residual (${\rm \mu}$s)')
+            elif xargs[0] == 'ophase':
+                plt.plot(self.ophase, zero, '--')
+                plt.errorbar(self.ophase, self.res, yerr = self.err, fmt = '.')
+                plt.xlim(0., 1.)
+                plt.xlabel('Orbital Phase')
+                plt.ylabel(r'residual (${\rm \mu}$s)')
+            else:pass
+        plt.show()
+
+    def plot(self, Xlabel, Ylabel, groups=None, colors=None, ax=None, fig=None, **kwargs):
+        c = colors
+        from pylab import subplot, xlabel, ylabel
+        from datatools.MJD import MJD_to_datetime
+        from numpy import inf, nan
+        colors = c
+        labeldict = {
+                "number":"Number",
+                "date":"Date",
+                "phase":'phase',
+                "err":'error',
+                "error":'error',
+                "freq":"Frequency (MHz)",
+                "freqency":"Frequency (MHz)",
+                "ophase":"Orbital Phase",
+                "res":r'residual (${\rm \mu}$s)',
+                "residual":r'residual (${\rm \mu}$s)',
+                "averes":r'averaged residual (${\rm \mu}$s)',
+                "aveerr":r'averaged erro (${\rm \mu}$s)',
+                "post phase":'postfit phase',
+                "prefit":r'prefit residual (${\rm \mu}$s)',
+                "DMX":r'Delta DM (pc cm$^{-3}$)',
+                }
+        if ax == None:
+            ax = subplot(111)
+        if Ylabel == "DMX":
+            Xlabel = "date"
+            DMX, DMXErr, DMXR1, DMXR2 = self.dmxlist
+            DMXR = []
+            DMXRErr = []
+            DMXvalue = []
+            DMXerror = []
+            for i in DMX.keys():
+                DMXR.append(MJD_to_datetime(float(DMXR1[i]+DMXR2[i])/2))
+                DMXRErr.append((MJD_to_datetime(float(DMXR2[i])) - MJD_to_datetime(float(DMXR1[i])))/2)
+                DMXvalue.append(DMX[i])
+                DMXerror.append(DMXErr[i])
+            if colors == None:
+                ax.errorbar(DMXR, DMXvalue, xerr=DMXRErr, yerr=DMXerror, fmt='.', **kwargs)
+            else:
+                ax.errorbar(DMXR, DMXvalue, xerr=DMXRErr, yerr=DMXe, fmt='.', color=colors[grp], **kwargs)
+            xlabel(labeldict[Xlabel])
+            ylabel(labeldict[Ylabel])
+            return ax
+        if groups == None and not Ylabel in ['averes','aveerr']:
+            groups = self.groups.keys()
+            groups.sort()
+            #groups = self.toafile.grouporder
+        elif groups == None and Ylabel in ['averes', 'aveerr']:
+            groups = self.averes.keys()
+            groups.sort()
+        if Xlabel == "date":
+            Xlimit = [MJD_to_datetime(100000), MJD_to_datetime(0.)]
+        else:
+            Xlimit = [inf,0]
+        for grp in groups:
+            Yerr = None
+            if Ylabel == "averes":
+                if Xlabel == "date":
+                    X = [MJD_to_datetime(t) for t in self.avetoa[grp]]
+                elif Xlabel == "ophase":
+                    raise "Not allowed to plot averes on phase"
+                elif Xlabel == "freq" or Xlabel == "frequency":
+                    raise "Not allowed to plot averes vs frequence"
+                elif Xlabel == "number":
+                    raise "Not allowed to plot averes vs number"
+                elif Xlabel == "phase":
+                    raise "Not allowed to plot averes vs phase"
+                else:
+                    raise "X label %s not allowed" % Xlabel
+                Y = self.averes[grp]
+                Yerr = self.aveerr[grp]
+            else:
+                idx = self.groups[grp]
+                if Ylabel == "res" or Ylabel == "residual":
+                    Y = self.res[idx]
+                    Yerr = self.err[idx]
+                elif Ylabel == "err" or Ylabel == "error":
+                    Y = self.err[idx]
+                elif Ylabel == "prefit":
+                    Y = self.prefitres[idx]
+                    Yerr = self.err[idx]
+                elif Ylabel == "post phase":
+                    Y = self.phase[idx]
+                if Xlabel == "date":
+                    X = [MJD_to_datetime(t) for t in self.toa[idx]]
+                elif Xlabel == "ophase":
+                    X = self.ophase[idx]
+                elif Xlabel == "freq" or Xlabel == "frequency":
+                    X = self.freq[idx]
+                elif Xlabel == "number":
+                    X = idx
+                elif Xlabel == "phase":
+                    X = self.phase[idx]
+                else:
+                    raise "X label %s not allowed" % Xlabel
+            if colors == None:
+                if Yerr == None:
+                    ax.plot(X, Y, '.', markeredgewidth=0, **kwargs)
+                else:
+                    ax.errorbar(X, Y, Yerr, fmt='.', mew=0,  **kwargs)
+            else:
+                if Yerr == None:
+                    ax.plot(X, Y, '.', color=colors[grp], markeredgewidth=0, markeredgecolor=colors[grp], **kwargs)
+                else:
+                    ax.errorbar(X, Y, Yerr, fmt='.', color=colors[grp], markeredgewidth=1, mec=colors[grp], **kwargs)
+            Xlimit[0] = min(min(X), Xlimit[0])
+            Xlimit[1] = max(max(X), Xlimit[1])
+        ax.plot(Xlimit,[0.,0.],'k--')
+        xlabel(labeldict[Xlabel])
+        ylabel(labeldict[Ylabel])
+        return ax                
+
+
+    def average(self, groups='', laspe=0.5):
+        from numpy import mean, sum, array
+        toafile = self.toafile
+        toa = self.toa
+        res = self.res
+        err = self.err
+        weight = self.weight
+        self.avetoa = {}
+        self.averes = {}
+        self.aveerr = {}
+        self.avewrms = {}
+        if groups == '':
+            keys = self.groups.keys()
+        else:
+            keys = groups
+        for key in keys:
+            idx = self.groups[key]
+            toagrp = [(toa[i], i) for i in idx]
+            toagrp.sort(key = lambda x: x[0])
+            grpkey = toagrp[0][0]
+            subgrp = {}
+            subgrp[grpkey] = [toagrp[0][1]]
+            grpkeylist =[grpkey]
+            self.avetoa[key] = []
+            self.averes[key] = []
+            self.aveerr[key] = []
+            for i in [x[1] for x in toagrp[1:]]:
+                t = toa[i]
+                if abs(t - grpkey) <= laspe:
+                    subgrp[grpkey].append(i)
+                else:
+                    grpkey = t
+                    grpkeylist.append(grpkey)
+                    subgrp[grpkey] = [i]
+            for grpkey in grpkeylist:
+                idx = subgrp[grpkey]
+                avetoa = mean(toa[idx])
+                weightsum = sum(weight[idx])
+                ressum = sum(res[idx]*weight[idx])
+                averes = ressum/weightsum
+                N = len(idx)
+                if N > 1:
+                    sigma = sqrt((sum([(res[i] - averes)**2*weight[i] for i in idx])/(N-1))/weightsum)
+                else:
+                    sigma = err[idx[0]]
+                if sigma == 0.:
+                    print "zero res err caused by similar residual in the same group -- ignored"
+                    print idx
+                    print res[idx], averes
+                    print toa[idx]
+                    for t in [ self.toafile.toalist[i] for i in idx]:
+                        print t.file, t.TOA
+                        print t.line
+                self.avetoa[key].append(avetoa) 
+                self.averes[key].append(averes)
+                self.aveerr[key].append(sigma)
+            self.avetoa[key] = array(self.avetoa[key])
+            self.averes[key] = array(self.averes[key])
+            self.aveerr[key] = array(self.aveerr[key])
+            def _wrms(res, err):
+                nres = []
+                nerr = []
+                for i in range(len(err)):
+                    if not err[i] == 0.:
+                        nres.append(res[i])
+                        nerr.append(err[i])
+                res = np.array(nres)
+                err = np.array(nerr)
+                weight = 1./err**2
+                wmres = sum(res*weight)/sum(weight)
+                mres = np.mean(res)
+                sumres = sum(res)
+                wsum = sum(weight)
+                wrms = sqrt(sum(res**2*weight - wmres*sumres)/wsum)
+                return wrms
+            self.avewrms[key] = _wrms(self.averes[key],self.aveerr[key])
 
 
