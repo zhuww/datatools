@@ -419,12 +419,15 @@ class TOAfile(object):
             for jpgrp in self.matchdict['notag']:
                 for grp in [k for k in self.matchdict.keys() if len(self.matchdict[k]) == 0 ]:
                     #print grp, self.matchdict[grp],len(self.matchdict[grp])
-                    if set(self.groups[grp]) < set(self.jumpgroups[jpgrp]):
+                    if self.jumpgroups.has_key(0) and set(self.groups[grp]) < set(self.jumpgroups[jpgrp]):
                         if not self.matchnotag.has_key(jpgrp):
                             self.matchnotag[jpgrp] = [grp]
                         else:
                             self.matchnotag[jpgrp].append(grp)
             alluntagged =set()
+            #print self.toafile
+            #print self.matchnotag
+            #print self.matchdict
             for s in [set(self.groups[grp]) for grp in self.matchnotag[jpgrp] for jpgrp in self.matchdict['notag']]:
                 alluntagged |= s
             alluntaggedjp =set()
@@ -1447,12 +1450,13 @@ class model(PARfile):
                 self.manifest.append(key)
                 self.parameters[key] = '1' #default to be fitted
 
-        DMX, DMXErr, DMXR1, DMXR2 = self.dmxlist   
-        for key in DMXR1:
-            if DMXR2[key] < self.START or DMXR1[key] > self.FINISH:
-                self.parameters['DMX_' + str(key).rjust(4,'0')] = '0'
-            else:
-                pass
+        if self.__dict__.has_key('DMX') or self.__dict__.has_key('DMX_0001'):
+            DMX, DMXErr, DMXR1, DMXR2 = self.dmxlist   
+            for key in DMXR1:
+                if DMXR2[key] < self.START or DMXR1[key] > self.FINISH:
+                    self.parameters['DMX_' + str(key).rjust(4,'0')] = '0'
+                else:
+                    pass
                 #self.parameters['DMX_' + str(key).rjust(4,'0')] = '1'
 
         self.groups = toafile.groups.copy()
@@ -1589,12 +1593,13 @@ class model(PARfile):
                 self.parameters[key] = '1' #default to be fitted
 
         #take care of DMX ranges outside and inside the [START, FINISH]
-        DMX, DMXErr, DMXR1, DMXR2 = self.dmxlist   
-        for key in DMXR1:
-            if DMXR2[key] < self.START or DMXR1[key] > self.FINISH:
-                self.parameters['DMX_' + str(key).rjust(4,'0')] = '0'
-            else:
-                pass
+        if self.__dict__.has_key('DMX') or self.__dict__.has_key('DMX_0001'):
+            DMX, DMXErr, DMXR1, DMXR2 = self.dmxlist   
+            for key in DMXR1:
+                if DMXR2[key] < self.START or DMXR1[key] > self.FINISH:
+                    self.parameters['DMX_' + str(key).rjust(4,'0')] = '0'
+                else:
+                    pass
                 #self.parameters['DMX_' + str(key).rjust(4,'0')] = '1'
 
         self.groups = toafile.groups.copy()
@@ -1726,7 +1731,7 @@ class model(PARfile):
 
     def plot(self, Xlabel, Ylabel, groups=None, colors=None, ax=None, fig=None, **kwargs):
         c = colors
-        from pylab import subplot, xlabel, ylabel
+        from pylab import subplot, xlabel, ylabel, legend
         from datatools.MJD import MJD_to_datetime
         from numpy import inf, nan
         colors = c
@@ -1779,6 +1784,7 @@ class model(PARfile):
             Xlimit = [MJD_to_datetime(100000), MJD_to_datetime(0.)]
         else:
             Xlimit = [inf,0]
+        subplots = {}
         for grp in groups:
             Yerr = None
             if Ylabel == "averes":
@@ -1822,19 +1828,21 @@ class model(PARfile):
                     raise "X label %s not allowed" % Xlabel
             if colors == None:
                 if Yerr == None:
-                    ax.plot(X, Y, '.', markeredgewidth=0, **kwargs)
+                    subp = ax.plot(X, Y, '.', markeredgewidth=0, **kwargs)
                 else:
-                    ax.errorbar(X, Y, Yerr, fmt='.', mew=0,  **kwargs)
+                    subp = ax.errorbar(X, Y, Yerr, fmt='.', mew=0,  **kwargs)
             else:
                 if Yerr == None:
-                    ax.plot(X, Y, '.', color=colors[grp], markeredgewidth=0, markeredgecolor=colors[grp], **kwargs)
+                    subp = ax.plot(X, Y, '.', markeredgewidth=0, color=colors[grp], **kwargs)
                 else:
-                    ax.errorbar(X, Y, Yerr, fmt='.', color=colors[grp], markeredgewidth=1, mec=colors[grp], **kwargs)
+                    subp = ax.errorbar(X, Y, Yerr, fmt='.', color=colors[grp], markeredgewidth=1, mec=colors[grp], **kwargs)
+            subplots.update({grp:subp})
             Xlimit[0] = min(min(X), Xlimit[0])
             Xlimit[1] = max(max(X), Xlimit[1])
         ax.plot(Xlimit,[0.,0.],'k--')
         xlabel(labeldict[Xlabel])
         ylabel(labeldict[Ylabel])
+        legend([subplots[g] for g in groups], [g for g in groups], loc=2)
         return ax                
 
 
