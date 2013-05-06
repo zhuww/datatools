@@ -1729,7 +1729,7 @@ class model(PARfile):
             else:pass
         plt.show()
 
-    def plot(self, Xlabel, Ylabel, groups=None, colors=None, ax=None, fig=None, **kwargs):
+    def plot(self, Xlabel, Ylabel, groups=None, colors=None, ax=None, fig=None, LegendOn=False, **kwargs):
         c = colors
         from pylab import subplot, xlabel, ylabel, legend
         from datatools.MJD import MJD_to_datetime
@@ -1842,7 +1842,8 @@ class model(PARfile):
         ax.plot(Xlimit,[0.,0.],'k--')
         xlabel(labeldict[Xlabel])
         ylabel(labeldict[Ylabel])
-        legend([subplots[g] for g in groups], [g for g in groups], loc=2)
+        if LegendOn:
+            legend([subplots[g] for g in groups], [g for g in groups], loc=2, numpoints=1)
         return ax                
 
 
