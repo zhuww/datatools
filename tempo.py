@@ -142,10 +142,24 @@ class TOA(object):
     def __repr__(self):
         return '%s format TOA %s(%s us) at %s MHZ' % (self.format, self.TOA, self.TOAsigma, self.frequency)
     def __str__(self):
+        TOAsigma = Decimal(self.TOAsigma)
+        if self.flags.has_key('EMAX'): 
+            if float(TOAsigma) > float(self.flags['EMAX']):
+                return ''
+        if self.flags.has_key('EMIN'): 
+            if TOAsigma < Decimal(self.flags['EMIN']):
+                TOAsigma = Decimal(self.flags['EMIN'])
+        if self.flags.has_key('EQUAD'):
+            TOAsigma = sqrt(TOAsigma**2 + self.flags['EQUAD']**2)
+        if self.flags.has_key('EFAC'):
+            TOAsigma = Decimal(TOAsigma) * self.flags['EFAC']
+
+
+
         if self.format == 'Princeton':
-            return '%s %s%8.2f %s%9.3f%s%9.5f' % (self._Observatory, self.info[0][:13].ljust(13, ' '), self.frequency, str(self.TOA.quantize(Decimal(0.00000000000001))).rjust(20, ' '), self.TOAsigma, self.info[1][:15].rjust(15,' '), self.DMcorr)
+            return '%s %s%8.2f %s%9.3f%s%9.5f' % (self._Observatory, self.info[0][:13].ljust(13, ' '), self.frequency, str(self.TOA.quantize(Decimal(0.00000000000001))).rjust(20, ' '), TOAsigma, self.info[1][:15].rjust(15,' '), self.DMcorr)
         if self.format == 'Parkes':
-            return ' %s%8.2f %s%8.5f%8.3f%s%s' % (self.info[0].ljust(24, ' '), self.frequency,str(self.TOA.quantize(Decimal(0.0000000000001))).rjust(21, ' '), self.DMcorr, self.TOAsigma, self.info[1][:8].rjust(8, ' '), self._Observatory)
+            return ' %s%8.2f %s%8.5f%8.3f%s%s' % (self.info[0].ljust(24, ' '), self.frequency,str(self.TOA.quantize(Decimal(0.0000000000001))).rjust(21, ' '), self.DMcorr, TOAsigma, self.info[1][:8].rjust(8, ' '), self._Observatory)
         if self.format == 'ITOA':
             try:
                 info = ' '.join(self.info).strip().ljust(9, ' ')
@@ -153,15 +167,28 @@ class TOA(object):
                 info = ' '.join(self.info).strip()[:9]
 
             if info[0] == ' ' or info[1] == ' ': info = 'IT'+info[2:]
-            return '%s%s%6.3f%11.3f%10.5f  %s' % (info,str(self.TOA.quantize(Decimal(0.0000000000001))).rjust(19, ' '), self.TOAsigma,self.frequency, self.DMcorr, self._Observatory)
+            return '%s%s%6.3f%11.3f%10.5f  %s' % (info,str(self.TOA.quantize(Decimal(0.0000000000001))).rjust(19, ' '), TOAsigma,self.frequency, self.DMcorr, self._Observatory)
+
         if self.format == 'Tempo2':
             kwpars = ''
             for key in [k for k in sorted(self.flags.keys(), reverse=True) if not k == 'EQUAD' and not k == 'JUMPflag' and not k =='EMAX' and not k =='EFAC' and not k =='EMIN']:
                 kwpars += ' -%s %s ' % (key, self.flags[key])
-            return '%s %s %s %s %s %s' % (self.info[0], self.frequency, str(self.TOA.quantize(Decimal(0.0000000000001))).rjust(19, ' '), str(self.TOAsigma.quantize(Decimal(0.001))), self._Observatory, kwpars) 
+            return '%s %s %s %s %s %s' % (self.info[0], self.frequency, str(self.TOA.quantize(Decimal(0.0000000000001))).rjust(19, ' '), str(TOAsigma.quantize(Decimal(0.001))), self._Observatory, kwpars) 
+
     def tempo2fmt(self):
+        TOAsigma = Decimal(t.TOAsigma)
+        if t.flags.has_key('EMAX'): 
+            if float(t.TOAsigma) > float(t.flags['EMAX']):
+                return ''
+        if t.flags.has_key('EMIN'): 
+            if t.TOAsigma < Decimal(t.flags['EMIN']):
+                TOAsigma = Decimal(t.flags['EMIN'])
+        if t.flags.has_key('EQUAD'):
+            TOAsigma = sqrt(t.TOAsigma**2 + t.flags['EQUAD']**2)
+        if t.flags.has_key('EFAC'):
+            TOAsigma = Decimal(t.TOAsigma) * t.flags['EFAC']
         file = self.file.replace(' ','_').replace('-', '_')
-        fmtstr = '%s %s %s %s %s' % (file, self.frequency, str(self.TOA.quantize(Decimal(0.00000000000001))).rjust(20, ' '), self.TOAsigma, self._Observatory)
+        fmtstr = '%s %s %s %s %s' % (file, self.frequency, str(self.TOA.quantize(Decimal(0.00000000000001))).rjust(20, ' '), TOAsigma, self._Observatory)
         kwpars = ''
         for key in [k for k in sorted(self.flags.keys(), reverse=True) if not k == 'EQUAD' and not k == 'JUMPflag' and not k =='EMAX' and not k == 'EFAC' and not k == 'EMIN']:
             kwpars += ' -%s %s ' % (key, self.flags[key])
@@ -181,7 +208,7 @@ class TOAcommand(object):
         return '%s %s' % (self.cmd, ' '.join(self.args))
 
 class TOAfile(object):
-    """[OutDated, use the TOAfile class in tempo module] A class for read/operate TOA files. """ 
+    """A class for read/operate TOA files. """ 
     def __init__(self, file, kws={'JUMPflag':False}, F0=None): 
         self.toafile = file
         self.list = []
@@ -283,21 +310,10 @@ class TOAfile(object):
                         if t.flags.has_key('EMAX'): 
                             if float(t.TOAsigma) > float(t.flags['EMAX']):
                                 continue
-                        #if t.flags.has_key('f'):
-                            #if self.EQUADvalues.has_key(t.flags['f']):
-                                #t.TOAsigma = sqrt(t.TOAsigma**2 + self.EQUADvalues[t.flags['f']]**2)
-                            #print 'here: ', t.flags['i'], self.EQUADvalues[t.flags['f']]
-                        if t.flags.has_key('EMIN'): 
-                            if t.TOAsigma < Decimal(t.flags['EMIN']):
-                                t.TOAsigma = Decimal(t.flags['EMIN'])
-                        if t.flags.has_key('EQUAD'):
-                            t.TOAsigma = sqrt(t.TOAsigma**2 + t.flags['EQUAD']**2)
-
-                        if t.flags.has_key('EFAC'):
-                            t.TOAsigma = Decimal(t.TOAsigma) * t.flags['EFAC']
-                            #if TOAsigma * self.EFAC > self.EMAX:
+                        #if t.flags.has_key('EFAC') and t.flags.has_key('EMAX'):
+                            #if t.TOAsigma * t.flags['EFAC'] > t.flags['EMAX']:
                                 #continue 
-                            #else:toagroup.append(t)
+
                         toagroup.append(t)
                         if t.TOA < self.start:self.start = t.TOA
                         if t.TOA > self.end: self.end = t.TOA
@@ -385,6 +401,7 @@ class TOAfile(object):
         #print jumpgrp
 
         self.matchdict = {}
+        self.matchnotag = {}
         self.firstgrp = None
         self.grouporder = []
         for grp in self.groups.keys():
@@ -1729,7 +1746,7 @@ class model(PARfile):
             else:pass
         plt.show()
 
-    def plot(self, Xlabel, Ylabel, groups=None, colors=None, ax=None, fig=None, LegendOn=False, **kwargs):
+    def plot(self, Xlabel, Ylabel, groups=None, colors=None, ax=None, fig=None, LegendOn=False, LegendLabels=None, **kwargs):
         c = colors
         from pylab import subplot, xlabel, ylabel, legend
         from datatools.MJD import MJD_to_datetime
@@ -1843,7 +1860,10 @@ class model(PARfile):
         xlabel(labeldict[Xlabel])
         ylabel(labeldict[Ylabel])
         if LegendOn:
-            legend([subplots[g] for g in groups], [g for g in groups], loc=2, numpoints=1)
+            if LegendLabels == None:
+                legend([subplots[g] for g in groups], [g for g in groups], loc=2, numpoints=1)
+            else:
+                legend([subplots[g] for g in groups], LegendLabels, loc=2, numpoints=1)
         return ax                
 
 
@@ -1858,6 +1878,7 @@ class model(PARfile):
         self.averes = {}
         self.aveerr = {}
         self.avewrms = {}
+        self.mediansigma = {}
         if groups == '':
             keys = self.groups.keys()
         else:
@@ -1923,5 +1944,6 @@ class model(PARfile):
                 wrms = sqrt(sum(res**2*weight - wmres*sumres)/wsum)
                 return wrms
             self.avewrms[key] = _wrms(self.averes[key],self.aveerr[key])
+            self.mediansigma[key] = np.median(self.aveerr[key])
 
 
