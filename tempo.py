@@ -1443,7 +1443,8 @@ class model(PARfile):
             self.convert(1)
             self.write()
         tmppulsefile = tempfile.NamedTemporaryFile(mode='w', suffix='.pls', delete = False).name
-        if toafile.issubgroup or not toafile.format == 'Tempo1':
+        #if toafile.issubgroup or not toafile.format == 'Tempo1':
+        if toafile.issubgroup:
             tmptimfile = tempfile.NamedTemporaryFile(mode='w', suffix=".tim", delete=False).name
             tf = open(tmptimfile, 'w')
             tf.write(toafile.tempo1fmt())
