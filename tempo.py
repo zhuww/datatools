@@ -8,6 +8,8 @@ from fileio import *
 #from decimal import *
 #from numpy import float64 as __Decimal
 from decimal import Decimal as __Decimal
+from decimal import getcontext
+getcontext().prec = 25
 def Decimal(value):
     """Convert string segment from TOA line to a float number.
     return 0 when the input is an empty string.
@@ -957,6 +959,11 @@ paramap = {
         ' O007':'JUMP_7',
         ' O008':'JUMP_8',
         ' O009':'JUMP_9',
+        'FD1  ':'FD1',
+        'FD2  ':'FD2',
+        'FD3  ':'FD3',
+        'FD4  ':'FD4',
+        'FD*  ':'FD5',
         }
 for i in range(200):
     key = 'DX' + str(i).rjust(3,'0')
@@ -978,7 +985,7 @@ class PARfile(object):
         if os.access(file, os.R_OK):
             self.parfile = file
         else: 
-            print file
+            print os.getcwd() + '/' + file
             raise FileError(file) 
         def floatify(val):
             try: return Decimal(val)
@@ -1100,9 +1107,12 @@ class PARfile(object):
             text = ''
             for item in self.manifest:
                 if item in self.parameters.keys() :
-                    text += '%s\t%s\t%s\t%s\n' % (item, self.__dict__[item][0], self.parameters[item] ,self.__dict__[item][1])
+                    if item.startswith('DMX'):
+                        text += '%s\t%s\t%s\t%s\n' % (item, self.__dict__[item][0], self.parameters[item] ,self.__dict__[item][1])#).replace('E+', 'D+').replace('E-','D-')
+                    else:
+                        text += '%s\t%s\t%s\t%s\n' % (item, self.__dict__[item][0], self.parameters[item] ,self.__dict__[item][1])#).replace('E+', 'D+').replace('E-','D-')
                 else:
-                    text += '%s\t%s\n' % (item, self.__dict__[item])
+                    text += ('%s\t%s\n' % (item, self.__dict__[item])).replace('D+00','')
             f.write(text)
     def freezeall(self, key=None):
         import re
@@ -1153,8 +1163,9 @@ class PARfile(object):
                 cov.append([float(x[0]) for x in a])
                 fd.seek(8, 1)
                 paramj = str(data['paramj'][0])
-                param = paramap[paramj]
-                self.parlist.append(param)
+                if not paramj == 'FD*  ':
+                    param = paramap[paramj]
+                    self.parlist.append(param)
                 #try:
                 self.err.append(float(str(bpf.__dict__[param][1])))
                 #except:
@@ -1214,7 +1225,7 @@ class PARfile(object):
     def randomnew(self, stepsize=1.):
         new = deepcopy(self)
         err = mvn(self.par, self.covariance)
-        for i in range(len(err)):
+        for i in range(len(self.parlist)):
             p = self.parlist[i]
             if p == 'RAJ' or p == 'DECJ':
                 dd,mm,ss = new.__dict__[p][0].split(':')
@@ -1481,11 +1492,11 @@ class model(PARfile):
         self.write()
         if not len(self.jumps) == len(toafile.jumpgroups):
             print "Number of jumps in parfile (%s) doesn't match the number of jumps in the toafile (%s)" % (len(self.jumps), len(toafile.jumpgroups) - 1)
-            print "This could be a problem."
+            #print "This could be a problem."
         if not set(self.jumps.keys()) <= set(toafile.jumpgroups.keys()):
             print "Jump group flag mismatch!"
-            print "Jump groups defined in parfile and not in toafile: %s" % (set(self.jumps.keys()) - set(toafile.jumpgroups.keys()))
-            print "Jump groups defined in toafile and not in parfile: %s" % (set(toafile.jumpgroups.keys()) - set(self.jumps.keys()))
+            #print "Jump groups defined in parfile and not in toafile: %s" % (set(self.jumps.keys()) - set(toafile.jumpgroups.keys()))
+            #print "Jump groups defined in toafile and not in parfile: %s" % (set(toafile.jumpgroups.keys()) - set(self.jumps.keys()))
         if pulsefile == None:
             if toafile.__dict__.has_key('npulse'):
                 savetxt(tmppulsefile, toafile.npulse, fmt='%.0f')
@@ -1625,7 +1636,7 @@ class model(PARfile):
         self.write()
         if not len(self.jumps) == len(self.jumpgroups) - 1:
             print "Number of jumps in parfile (%s) doesn't match the number of jumps in the toafile (%s)" % (len(self.jumps), len(self.jumpgroups) - 1)
-            print "This could be a problem."
+            #print "This could be a problem."
         if not set(self.jumps.keys()) < set(self.jumpgroups.keys()):
             print "Jump group flag mismatch! try othergroups"
             if set(self.jumps.keys()) - set(toafile.othergroups.keys()) == set([0]):
