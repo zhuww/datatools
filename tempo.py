@@ -1767,6 +1767,7 @@ class model(PARfile):
         labeldict = {
                 "number":"Number",
                 "date":"Date",
+                "mjd":"MJD",
                 "phase":'phase',
                 "err":'error',
                 "error":'error',
@@ -1845,6 +1846,8 @@ class model(PARfile):
                     Y = self.phase[idx]
                 if Xlabel == "date":
                     X = [MJD_to_datetime(t) for t in self.toa[idx]]
+                elif Xlabel == "mjd":
+                    X = [float(t) for t in self.toa[idx]]
                 elif Xlabel == "ophase":
                     X = self.ophase[idx]
                 elif Xlabel == "freq" or Xlabel == "frequency":
