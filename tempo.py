@@ -842,6 +842,10 @@ def covtotempo2(timfile, parfile, newtimfile='', newparfile=''):
 
 from commands import getoutput
 def tempofit(parfile, toafile=None, pulsefile=None):
+    """
+tempofit(parfile, toafile=None, pulsefile=None):
+    use tempo to fit the parfile and toafile, specify pulsefile to use pulse number.
+    """
     if toafile == None:
         toafile = ''
     if pulsefile == None:
@@ -1435,6 +1439,10 @@ class model(PARfile):
             self.dmxlist = getDMX(self)
 
     def tempofit(self, toafile, pulsefile=None):
+        """
+        model.tempofit(toafile, pulsefile=None):
+        use tempo to fit the parfile and toafile, specify pulsefile to use pulse number.
+        """
         from numpy import mean, array, fromfile, savetxt
         self.START = toafile.start
         self.FINISH = toafile.end
@@ -1584,6 +1592,10 @@ class model(PARfile):
 
 
     def tempo2fit(self, toafile=None):
+        """
+        model.tempo2fit(toafile, pulsefile=None):
+        use tempo2 to fit the parfile and toafile.
+        """
         self.START = toafile.start
         self.FINISH = toafile.end
         if toafile == None:
@@ -1733,6 +1745,7 @@ class model(PARfile):
 
 
     def plotres(self, *xargs):
+        """The same as the tempo/util/plotres, use as model.plotres(), can take general matplotlib plotting parameters as keywords."""
         import datatools.MJD
         import pylab as plt
         zero = np.array([0]*len(self.toa))
@@ -1759,6 +1772,10 @@ class model(PARfile):
         plt.show()
 
     def plot(self, Xlabel, Ylabel, groups=None, colors=None, ax=None, fig=None, LegendOn=False, LegendLabels=None, **kwargs):
+        """ploting routine, 
+        possible X-axis: number, date, mjd, ophase, freq 
+        possilbe Y-axis: err, res, averes, prefit, DMX 
+            """
         c = colors
         from pylab import subplot, xlabel, ylabel, legend
         from datatools.MJD import MJD_to_datetime
@@ -1883,6 +1900,11 @@ class model(PARfile):
 
 
     def average(self, groups='', laspe=0.5):
+        """
+        Performing the daily-average, 
+        arguments: groups = [list of groups one wants to average] (Default all groups)
+                   lapse=0.5 (the window size for daily averaging, default to half day)
+        """
         from numpy import mean, sum, array
         toafile = self.toafile
         toa = self.toa
