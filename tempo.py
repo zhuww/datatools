@@ -1843,6 +1843,11 @@ class model(PARfile):
             if Ylabel == "averes":
                 if Xlabel == "date":
                     X = [MJD_to_datetime(t) for t in self.avetoa[grp]]
+                elif Xlabel == 'mjd':
+                    from matplotlib.ticker import FormatStrFormatter
+                    majorFormatter = FormatStrFormatter('%5.0f')
+                    ax.xaxis.set_major_formatter(majorFormatter)
+                    X = [float(t) for t in self.avetoa[grp]]
                 elif Xlabel == "ophase":
                     raise "Not allowed to plot averes on phase"
                 elif Xlabel == "freq" or Xlabel == "frequency":
