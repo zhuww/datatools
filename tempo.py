@@ -1802,15 +1802,21 @@ class model(PARfile):
         if ax == None:
             ax = subplot(111)
         if Ylabel == "DMX":
-            Xlabel = "date"
+            from matplotlib.ticker import FormatStrFormatter
+            majorFormatter = FormatStrFormatter('%5.0f')
             DMX, DMXErr, DMXR1, DMXR2 = self.dmxlist
             DMXR = []
             DMXRErr = []
             DMXvalue = []
             DMXerror = []
             for i in DMX.keys():
-                DMXR.append(MJD_to_datetime(float(DMXR1[i]+DMXR2[i])/2))
-                DMXRErr.append((MJD_to_datetime(float(DMXR2[i])) - MJD_to_datetime(float(DMXR1[i])))/2)
+                if Xlabel == "date":
+                    DMXR.append(MJD_to_datetime(float(DMXR1[i]+DMXR2[i])/2))
+                    DMXRErr.append((MJD_to_datetime(float(DMXR2[i])) - MJD_to_datetime(float(DMXR1[i])))/2)
+                else:
+                    DMXR.append((float(DMXR1[i]+DMXR2[i])/2))
+                    DMXRErr.append((float(DMXR2[i]) - float(DMXR1[i]))/2)
+                    ax.xaxis.set_major_formatter(majorFormatter)
                 DMXvalue.append(DMX[i])
                 DMXerror.append(DMXErr[i])
             if colors == None:
@@ -1864,6 +1870,9 @@ class model(PARfile):
                 if Xlabel == "date":
                     X = [MJD_to_datetime(t) for t in self.toa[idx]]
                 elif Xlabel == "mjd":
+                    from matplotlib.ticker import FormatStrFormatter
+                    majorFormatter = FormatStrFormatter('%5.0f')
+                    ax.xaxis.set_major_formatter(majorFormatter)
                     X = [float(t) for t in self.toa[idx]]
                 elif Xlabel == "ophase":
                     X = self.ophase[idx]
