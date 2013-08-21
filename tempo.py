@@ -119,6 +119,10 @@ class TOA(object):
             self.TOA = Decimal(line[2])
             self.TOAsigma = Decimal(line[3])
             self._Observatory = line[4].strip()
+            if self._Observatory == 'ao':
+                self._Observatory = '3'
+            elif self._Observatory == 'gbt':
+                self._Observatory = '1'
             if self._Observatory in Observatory_list:
                 self.Observatory = Observatory_list[str(self._Observatory)]
             else:
@@ -178,18 +182,18 @@ class TOA(object):
             return '%s %s %s %s %s %s' % (self.info[0], self.frequency, str(self.TOA.quantize(Decimal(0.0000000000001))).rjust(19, ' '), str(TOAsigma.quantize(Decimal(0.001))), self._Observatory, kwpars) 
 
     def tempo2fmt(self):
-        TOAsigma = Decimal(t.TOAsigma)
-        if t.flags.has_key('EMAX'): 
-            if float(t.TOAsigma) > float(t.flags['EMAX']):
+        TOAsigma = Decimal(self.TOAsigma)
+        if self.flags.has_key('EMAX'): 
+            if float(self.TOAsigma) > float(self.flags['EMAX']):
                 return ''
-        if t.flags.has_key('EMIN'): 
-            if t.TOAsigma < Decimal(t.flags['EMIN']):
-                TOAsigma = Decimal(t.flags['EMIN'])
-        if t.flags.has_key('EQUAD'):
-            TOAsigma = sqrt(t.TOAsigma**2 + t.flags['EQUAD']**2)
-        if t.flags.has_key('EFAC'):
-            TOAsigma = Decimal(t.TOAsigma) * t.flags['EFAC']
-        file = self.file.replace(' ','_').replace('-', '_')
+        if self.flags.has_key('EMIN'): 
+            if self.TOAsigma < Decimal(self.flags['EMIN']):
+                TOAsigma = Decimal(self.flags['EMIN'])
+        if self.flags.has_key('EQUAD'):
+            TOAsigma = sqrt(self.TOAsigma**2 + self.flags['EQUAD']**2)
+        if self.flags.has_key('EFAC'):
+            TOAsigma = Decimal(self.TOAsigma) * self.flags['EFAC']
+        file = self.file.split('/')[-1].replace(' ','_').replace('-', '_')
         fmtstr = '%s %s %s %s %s' % (file, self.frequency, str(self.TOA.quantize(Decimal(0.00000000000001))).rjust(20, ' '), TOAsigma, self._Observatory)
         kwpars = ''
         for key in [k for k in sorted(self.flags.keys(), reverse=True) if not k == 'EQUAD' and not k == 'JUMPflag' and not k =='EMAX' and not k == 'EFAC' and not k == 'EMIN']:
@@ -1499,9 +1503,8 @@ class model(PARfile):
         self.groups = toafile.groups.copy()
         self.jumpgroups = toafile.jumpgroups.copy()
         self.write()
-        if not len(self.jumps) == len(toafile.jumpgroups):
-            print "Number of jumps in parfile (%s) doesn't match the number of jumps in the toafile (%s)" % (len(self.jumps), len(toafile.jumpgroups) - 1)
-            #print "This could be a problem."
+        #if not len(self.jumps) == len(toafile.jumpgroups):
+            #print "Number of jumps in parfile (%s) doesn't match the number of jumps in the toafile (%s)" % (len(self.jumps), len(toafile.jumpgroups) - 1)
         if not set(self.jumps.keys()) <= set(toafile.jumpgroups.keys()):
             print "Jump group flag mismatch!"
             #print "Jump groups defined in parfile and not in toafile: %s" % (set(self.jumps.keys()) - set(toafile.jumpgroups.keys()))
