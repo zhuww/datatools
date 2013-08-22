@@ -410,7 +410,7 @@ class TOAfile(object):
         self.matchnotag = {}
         self.firstgrp = None
         self.grouporder = []
-        for grp in self.groups.keys():
+        for grp in self.groups.keys():#now go through all groups and see if they contain the jump gropups
             self.matchdict[grp] = []
             if self.jumpgroups.has_key(0):
                 if set(self.jumpgroups[0]) <= set(self.groups[grp]):
@@ -438,7 +438,7 @@ class TOAfile(object):
                 if not self.grouporder[-1] == 'notag' and not 'notag' in self.grouporder:
                     self.grouporder.append('notag')
         if self.matchdict.has_key('notag') and any([len(self.matchdict[k])==0 for k in self.matchdict.keys()]):
-            self.matchnotag = {}
+            self.matchnotag = {} #See if jump group contains multiple info tags
             for jpgrp in self.matchdict['notag']:
                 for grp in [k for k in self.matchdict.keys() if len(self.matchdict[k]) == 0 ]:
                     #print grp, self.matchdict[grp],len(self.matchdict[grp])
@@ -451,15 +451,22 @@ class TOAfile(object):
             #print self.toafile
             #print self.matchnotag
             #print self.matchdict
-            for s in [set(self.groups[grp]) for grp in self.matchnotag[jpgrp] for jpgrp in self.matchdict['notag']]:
-                alluntagged |= s
+            for jpgrp in self.matchdict['notag']:
+                for s in [set(self.groups[grp]) for grp in self.matchnotag[jpgrp]]:
+                    alluntagged |= s
             alluntaggedjp =set()
             for s in [set(self.jumpgroups[jpgrp]) for jpgrp in self.matchdict['notag']]:
                 alluntaggedjp |= s
             if not  alluntagged == alluntaggedjp:
-                print self.matchnotag, self.matchdict
-                print alluntagged , alluntaggedjp
+                print 'self.matchnotag: ', self.matchnotag
+                print 'self.matchdic: ', self.matchdict
+                #print [grp for grp in self.matchnotag[jpgrp] for jpgrp in [0,1]]
+                #print [grp for grp in self.matchnotag[jpgrp] for jpgrp in self.matchdict['notag']]
+                #print alluntagged #, alluntaggedjp
+                #print alluntaggedjp
+                print 'Warning: some toas does not belong to a jump group:' ,
                 self.groups['UntagedJump'] = list(alluntaggedjp - alluntagged)
+                print self.groups['UntagedJump']
 
             self.jumpdict = self.matchdict.copy()
             for jumpgrp in self.matchnotag.keys():
