@@ -451,10 +451,10 @@ class TOAfile(object):
                             self.matchnotag[jpgrp].append(grp)
             alluntagged =set()
             #print self.toafile
-            print self.matchnotag
-            print self.matchdict
+            #print self.matchnotag
+            #print self.matchdict
             for jpgrp in self.matchdict['notag']:
-                print jpgrp, self.matchnotag[jpgrp]
+                #print jpgrp, self.matchnotag[jpgrp]
                 for s in [set(self.groups[grp]) for grp in self.matchnotag[jpgrp]]:
                     alluntagged |= s
             alluntaggedjp =set()
