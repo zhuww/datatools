@@ -215,7 +215,9 @@ class TOAcommand(object):
 
 class TOAfile(object):
     """A class for read/operate TOA files. """ 
-    def __init__(self, file, kws={'JUMPflag':False}, F0=None): 
+    def __init__(self, file, kws='', F0=None): 
+        if kws == '':
+            kws = {'JUMPflag':False} #use to be in __init()__; but I forgto why I did that.
         self.toafile = file
         self.list = []
         self.cmdlist = []
@@ -449,9 +451,10 @@ class TOAfile(object):
                             self.matchnotag[jpgrp].append(grp)
             alluntagged =set()
             #print self.toafile
-            #print self.matchnotag
-            #print self.matchdict
+            print self.matchnotag
+            print self.matchdict
             for jpgrp in self.matchdict['notag']:
+                print jpgrp, self.matchnotag[jpgrp]
                 for s in [set(self.groups[grp]) for grp in self.matchnotag[jpgrp]]:
                     alluntagged |= s
             alluntaggedjp =set()
@@ -1510,12 +1513,8 @@ class model(PARfile):
         self.groups = toafile.groups.copy()
         self.jumpgroups = toafile.jumpgroups.copy()
         self.write()
-        #if not len(self.jumps) == len(toafile.jumpgroups):
-            #print "Number of jumps in parfile (%s) doesn't match the number of jumps in the toafile (%s)" % (len(self.jumps), len(toafile.jumpgroups) - 1)
-        if not set(self.jumps.keys()) <= set(toafile.jumpgroups.keys()):
-            print "Jump group flag mismatch!"
-            #print "Jump groups defined in parfile and not in toafile: %s" % (set(self.jumps.keys()) - set(toafile.jumpgroups.keys()))
-            #print "Jump groups defined in toafile and not in parfile: %s" % (set(toafile.jumpgroups.keys()) - set(self.jumps.keys()))
+        #if not set(self.jumps.keys()) <= set(toafile.jumpgroups.keys()):
+            #print "Jump group flag mismatch!"
         if pulsefile == None:
             if toafile.__dict__.has_key('npulse'):
                 savetxt(tmppulsefile, toafile.npulse, fmt='%.0f')
@@ -1901,20 +1900,20 @@ class model(PARfile):
                     raise "X label %s not allowed" % Xlabel
             if colors == None:
                 if Yerr == None:
-                    subp = ax.plot(X, Y, '.', markeredgewidth=0, **kwargs)
+                    subp = ax.plot(X, Y, '.', markeredgewidth=0, label=grp, **kwargs)
                 else:
-                    subp = ax.errorbar(X, Y, Yerr, fmt='.', mew=0,  **kwargs)
+                    subp = ax.errorbar(X, Y, Yerr, fmt='.', mew=0, label=grp, **kwargs)
             else:
                 if Yerr == None:
-                    subp = ax.plot(X, Y, '.', markeredgewidth=0, color=colors[grp], **kwargs)
+                    subp = ax.plot(X, Y, '.', markeredgewidth=0, color=colors[grp], label=grp, **kwargs)
                 else:
-                    subp = ax.errorbar(X, Y, Yerr, fmt='.', color=colors[grp], markeredgewidth=1, mec=colors[grp], **kwargs)
+                    subp = ax.errorbar(X, Y, Yerr, fmt='.', color=colors[grp], markeredgewidth=1, mec=colors[grp], label=grp, **kwargs)
             subplots.update({grp:subp})
             Xlimit[0] = min(min(X), Xlimit[0])
             Xlimit[1] = max(max(X), Xlimit[1])
         ax.plot(Xlimit,[0.,0.],'k--')
-        xlabel(labeldict[Xlabel])
-        ylabel(labeldict[Ylabel])
+        ax.set_xlabel(labeldict[Xlabel])
+        ax.set_ylabel(labeldict[Ylabel])
         if LegendOn:
             if LegendLabels == None:
                 legend([subplots[g] for g in groups], [g for g in groups], loc=2, numpoints=1)
@@ -2002,7 +2001,10 @@ class model(PARfile):
                 mres = np.mean(res)
                 sumres = sum(res)
                 wsum = sum(weight)
-                wrms = sqrt(sum(res**2*weight - wmres*sumres)/wsum)
+                try:
+                    wrms = sqrt(sum(res**2*weight - wmres*sumres)/wsum)
+                except ValueError:
+                    return None
                 return wrms
             self.avewrms[key] = _wrms(self.averes[key],self.aveerr[key])
             self.mediansigma[key] = np.median(self.aveerr[key])
