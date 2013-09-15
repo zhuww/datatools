@@ -1414,17 +1414,21 @@ def getDMX(pf):
     DMX1= {}
     DMXR1 = {}
     DMXR2 = {}
+    if 'DM' in pf.manifest:
+        DM = pf.__dict__['DM'][0]
+    else:
+        DM = pf.__dict__['DM']
     for pars in DMXpars:
         if pars.find('DMXR') == -1 and len(pars)>=4:
             if not pars[3] in 'EF':
                 if not pars[3] == '1':
                     try:
-                        DMX[int(pars[4:])] = pf.__dict__[pars][0] + pf.__dict__['DM']
+                        DMX[int(pars[4:])] = pf.__dict__[pars][0] + DM
                         DMXErr[int(pars[4:])] = pf.__dict__[pars][1] 
                     except:
                         #print pars , pf.__dict__[pars]
                         #raise stop
-                        DMX[int(pars[4:])] = pf.__dict__[pars] + pf.__dict__['DM']
+                        DMX[int(pars[4:])] = pf.__dict__[pars] + DM
                         DMXErr[int(pars[4:])] = 0
                 else:
                     DMX1[int(pars[5:])] = pf.__dict__[pars][0]
@@ -1435,7 +1439,7 @@ def getDMX(pf):
                 DMXR2[int(pars[6:])] = pf.__dict__[pars]
 
 
-    DMXList = [DMX[x] for x in DMX]
+    #DMXList = [DMX[x] for x in DMX]
     return DMX, DMXErr, DMXR1, DMXR2
 
 
@@ -1826,12 +1830,18 @@ class model(PARfile):
                     DMXR.append((float(DMXR1[i]+DMXR2[i])/2))
                     DMXRErr.append((float(DMXR2[i]) - float(DMXR1[i]))/2)
                     ax.xaxis.set_major_formatter(majorFormatter)
-                DMXvalue.append(DMX[i])
-                DMXerror.append(DMXErr[i])
-            if colors == None:
-                ax.errorbar(DMXR, DMXvalue, xerr=DMXRErr, yerr=DMXerror, fmt='.', **kwargs)
-            else:
-                ax.errorbar(DMXR, DMXvalue, xerr=DMXRErr, yerr=DMXe, fmt='.', color=colors[grp], **kwargs)
+                DMXvalue.append(float(str(DMX[i])))
+                DMXerror.append(float(str(DMXErr[i])))
+            try:
+                if colors == None:
+                    ax.errorbar(DMXR, DMXvalue, xerr=DMXRErr, yerr=DMXerror, fmt='.', **kwargs)
+                else:
+                    ax.errorbar(DMXR, DMXvalue, xerr=DMXRErr, yerr=DMXe, fmt='.', color=colors[grp], **kwargs)
+            except ValueError:
+                print 'R: ', DMXR
+                print 'value: ', DMXvalue
+                print 'Rerr: ', DMXRErr
+                print 'DM err: ', DMXerror
             xlabel(labeldict[Xlabel])
             ylabel(labeldict[Ylabel])
             return ax
