@@ -1414,7 +1414,7 @@ def getDMX(pf):
     DMX1= {}
     DMXR1 = {}
     DMXR2 = {}
-    if 'DM' in pf.manifest:
+    if type(pf.__dict__['DM']) in (list, tuple):
         DM = pf.__dict__['DM'][0]
     else:
         DM = pf.__dict__['DM']
