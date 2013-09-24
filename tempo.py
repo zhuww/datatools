@@ -1921,7 +1921,8 @@ class model(PARfile):
             subplots.update({grp:subp})
             Xlimit[0] = min(min(X), Xlimit[0])
             Xlimit[1] = max(max(X), Xlimit[1])
-        ax.plot(Xlimit,[0.,0.],'k--')
+        #ax.plot(Xlimit,[0.,0.],'k--')
+        ax.axhline(y=0, color='k', linestyle='--')
         ax.set_xlabel(labeldict[Xlabel])
         ax.set_ylabel(labeldict[Ylabel])
         if LegendOn:
