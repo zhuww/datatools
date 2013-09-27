@@ -9,7 +9,8 @@ from fileio import *
 #from numpy import float64 as __Decimal
 from decimal import Decimal as __Decimal
 from decimal import getcontext
-getcontext().prec = 25
+getcontext().prec = 30
+secperday = 86400
 def Decimal(value):
     """Convert string segment from TOA line to a float number.
     return 0 when the input is an empty string.
@@ -129,6 +130,7 @@ class TOA(object):
                 self.Observatory = str(self._Observatory)
             #self.info.extend(line[5:])
             tags = ' '.join(line[5:])
+            #self.flags = {'i':flags['i']}
             import re
             p = re.compile('-(?P<par>\w+)\s+(?P<value>\S+)', re.VERBOSE)
             for m in p.finditer(tags):
@@ -159,13 +161,17 @@ class TOA(object):
             TOAsigma = sqrt(TOAsigma**2 + self.flags['EQUAD']**2)
         if self.flags.has_key('EFAC'):
             TOAsigma = Decimal(TOAsigma) * self.flags['EFAC']
+        if self.flags.has_key('to'):
+            ActualTOA = self.TOA + Decimal(self.flags['to'])/secperday
+        else:
+            ActualTOA = self.TOA
 
 
 
         if self.format == 'Princeton':
-            return '%s %s%8.2f %s%9.3f%s%9.5f' % (self._Observatory, self.info[0][:13].ljust(13, ' '), self.frequency, str(self.TOA.quantize(Decimal(0.00000000000001))).rjust(20, ' '), TOAsigma, self.info[1][:15].rjust(15,' '), self.DMcorr)
+            return '%s %s%8.2f %s%9.3f%s%9.5f' % (self._Observatory, self.info[0][:13].ljust(13, ' '), self.frequency, str(ActualTOA.quantize(Decimal(0.00000000000001))).rjust(20, ' '), TOAsigma, self.info[1][:15].rjust(15,' '), self.DMcorr)
         if self.format == 'Parkes':
-            return ' %s%8.2f %s%8.5f%8.3f%s%s' % (self.info[0].ljust(24, ' '), self.frequency,str(self.TOA.quantize(Decimal(0.0000000000001))).rjust(21, ' '), self.DMcorr, TOAsigma, self.info[1][:8].rjust(8, ' '), self._Observatory)
+            return ' %s%8.2f %s%8.5f%8.3f%s%s' % (self.info[0].ljust(24, ' '), self.frequency,str(ActualTOA .quantize(Decimal(0.00000000000001))).rjust(21, ' '), self.DMcorr, TOAsigma, self.info[1][:8].rjust(8, ' '), self._Observatory)
         if self.format == 'ITOA':
             try:
                 info = ' '.join(self.info).strip().ljust(9, ' ')
@@ -173,13 +179,13 @@ class TOA(object):
                 info = ' '.join(self.info).strip()[:9]
 
             if info[0] == ' ' or info[1] == ' ': info = 'IT'+info[2:]
-            return '%s%s%6.3f%11.3f%10.5f  %s' % (info,str(self.TOA.quantize(Decimal(0.0000000000001))).rjust(19, ' '), TOAsigma,self.frequency, self.DMcorr, self._Observatory)
+            return '%s%s%6.3f%11.3f%10.5f  %s' % (info,str(ActualTOA .quantize(Decimal(0.0000000000001))).rjust(19, ' '), TOAsigma,self.frequency, self.DMcorr, self._Observatory)
 
         if self.format == 'Tempo2':
             kwpars = ''
             for key in [k for k in sorted(self.flags.keys(), reverse=True) if not k == 'EQUAD' and not k == 'JUMPflag' and not k =='EMAX' and not k =='EFAC' and not k =='EMIN']:
                 kwpars += ' -%s %s ' % (key, self.flags[key])
-            return '%s %s %s %s %s %s' % (self.info[0], self.frequency, str(self.TOA.quantize(Decimal(0.0000000000001))).rjust(19, ' '), str(TOAsigma.quantize(Decimal(0.001))), self._Observatory, kwpars) 
+            return '%s %s %s %s %s %s' % (self.info[0], self.frequency, str(ActualTOA .quantize(Decimal(0.000000000000001))).rjust(20, ' '), str(TOAsigma.quantize(Decimal(0.001))), self._Observatory, kwpars) 
 
     def tempo2fmt(self):
         TOAsigma = Decimal(self.TOAsigma)
@@ -193,10 +199,22 @@ class TOA(object):
             TOAsigma = sqrt(self.TOAsigma**2 + self.flags['EQUAD']**2)
         if self.flags.has_key('EFAC'):
             TOAsigma = Decimal(self.TOAsigma) * self.flags['EFAC']
+        if self.flags.has_key('to'):
+            timeoffset = Decimal(('%.11f' % float(self.flags['to'])))/secperday
+            ActualTOA = self.TOA + timeoffset
+            #print '%s' % (timeoffset.quantize(Decimal(0.000000000000001)))
+            #print '%s' % (self.TOA.quantize(Decimal(0.00000000000001)))
+        else:
+            ActualTOA = self.TOA
+        if self._Observatory == '1':
+            self._Observatory = 'gbt'
+        elif self._Observatory == '3':
+            self._Observatory = 'ao'
         file = self.file.split('/')[-1].replace(' ','_').replace('-', '_')
-        fmtstr = '%s %s %s %s %s' % (file, self.frequency, str(self.TOA.quantize(Decimal(0.00000000000001))).rjust(20, ' '), TOAsigma, self._Observatory)
+        #print ActualTOA
+        fmtstr = '%s %s %s %s %s' % (file, self.frequency, str(ActualTOA.quantize(Decimal(0.00000000000001))).ljust(21, ' '), TOAsigma, self._Observatory)
         kwpars = ''
-        for key in [k for k in sorted(self.flags.keys(), reverse=True) if not k == 'EQUAD' and not k == 'JUMPflag' and not k =='EMAX' and not k == 'EFAC' and not k == 'EMIN']:
+        for key in [k for k in sorted(self.flags.keys(), reverse=True) if not k == 'EQUAD' and not k == 'JUMPflag' and not k =='EMAX' and not k == 'EFAC' and not k == 'EMIN' and not k == 'to']:
             kwpars += ' -%s %s ' % (key, self.flags[key])
         result = fmtstr+kwpars
         if result[14] == '.':
@@ -453,6 +471,7 @@ class TOAfile(object):
             #print self.toafile
             #print self.matchnotag
             #print self.matchdict
+            #print self.jumpgroups.keys()
             for jpgrp in self.matchdict['notag']:
                 #print jpgrp, self.matchnotag[jpgrp]
                 for s in [set(self.groups[grp]) for grp in self.matchnotag[jpgrp]]:
@@ -562,8 +581,6 @@ class TOAfile(object):
         new.issubgroup = True
         return new
 
-        
-
 
     def __str__(self):
         #text = ''
@@ -575,6 +592,8 @@ class TOAfile(object):
                     #text += str(t)+'\n'
         #return text
         return  '\n'.join([str(x) for x in self.list])
+
+
     def tempo1fmt(self, format = 'Princeton'):
         """convert TOA file to tempo1 format, use the format keyword to define which version (Princeton, Parkes or ITOA) """
         for toa in self.toalist:
@@ -610,7 +629,8 @@ class TOAfile(object):
                         text += 'JUMP\n'
             else:
                 for jpgrp in self.matchdict['notag']:
-                    text += 'JUMP\n'
+                    if not jpgrp == 0:
+                        text += 'JUMP\n'
                     for grp in self.matchnotag[jpgrp]:
                         if grp in self.phasegroups.keys():
                             if not phaseoffset == self.phasegroups[grp]:
@@ -629,7 +649,8 @@ class TOAfile(object):
                             toa.format = format
                             text += '%s\n' % str(toa)
                             toa.format = oldfmt
-                    text += 'JUMP\n'
+                    if not jpgrp == 0:
+                        text += 'JUMP\n'
 
         return text
 
