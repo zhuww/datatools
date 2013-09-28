@@ -169,6 +169,7 @@ class TOA(object):
 
 
         if self.format == 'Princeton':
+            #return '%s %s%8.2f %s%9.3f%s%9.5f' % (self._Observatory, self.info[0][:13].ljust(13, ' '), self.frequency, (str(ActualTOA).ljust(20, ' '))[:20], TOAsigma, self.info[1][:15].rjust(15,' '), self.DMcorr)
             return '%s %s%8.2f %s%9.3f%s%9.5f' % (self._Observatory, self.info[0][:13].ljust(13, ' '), self.frequency, str(ActualTOA.quantize(Decimal(0.00000000000001))).rjust(20, ' '), TOAsigma, self.info[1][:15].rjust(15,' '), self.DMcorr)
         if self.format == 'Parkes':
             return ' %s%8.2f %s%8.5f%8.3f%s%s' % (self.info[0].ljust(24, ' '), self.frequency,str(ActualTOA .quantize(Decimal(0.00000000000001))).rjust(21, ' '), self.DMcorr, TOAsigma, self.info[1][:8].rjust(8, ' '), self._Observatory)
@@ -212,7 +213,8 @@ class TOA(object):
             self._Observatory = 'ao'
         file = self.file.split('/')[-1].replace(' ','_').replace('-', '_')
         #print ActualTOA
-        fmtstr = '%s %s %s %s %s' % (file, self.frequency, str(ActualTOA.quantize(Decimal(0.00000000000001))).ljust(21, ' '), TOAsigma, self._Observatory)
+        #fmtstr = '%s %s %s %s %s' % (file, self.frequency, str(ActualTOA.quantize(Decimal(0.00000000000001))).ljust(21, ' '), TOAsigma, self._Observatory)
+        fmtstr = '%s %s %s %s %s' % (file, self.frequency, str(ActualTOA).ljust(21, ' ')[:21], TOAsigma, self._Observatory)
         kwpars = ''
         for key in [k for k in sorted(self.flags.keys(), reverse=True) if not k == 'EQUAD' and not k == 'JUMPflag' and not k =='EMAX' and not k == 'EFAC' and not k == 'EMIN' and not k == 'to']:
             kwpars += ' -%s %s ' % (key, self.flags[key])
