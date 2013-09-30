@@ -186,20 +186,20 @@ class TOA(object):
             kwpars = ''
             for key in [k for k in sorted(self.flags.keys(), reverse=True) if not k == 'EQUAD' and not k == 'JUMPflag' and not k =='EMAX' and not k =='EFAC' and not k =='EMIN']:
                 kwpars += ' -%s %s ' % (key, self.flags[key])
-            return '%s %s %s %s %s %s' % (self.info[0], self.frequency, str(ActualTOA .quantize(Decimal(0.000000000000001))).rjust(20, ' '), str(TOAsigma.quantize(Decimal(0.001))), self._Observatory, kwpars) 
+            return '%s %s %s %s %s %s' % (self.info[0], self.frequency, str(ActualTOA .quantize(Decimal(0.00000000000001))).rjust(20, ' '), str(TOAsigma.quantize(Decimal(0.001))), self._Observatory, kwpars) 
 
     def tempo2fmt(self):
         TOAsigma = Decimal(self.TOAsigma)
         if self.flags.has_key('EMAX'): 
-            if float(self.TOAsigma) > float(self.flags['EMAX']):
+            if float(TOAsigma) > float(self.flags['EMAX']):
                 return ''
         if self.flags.has_key('EMIN'): 
             if self.TOAsigma < Decimal(self.flags['EMIN']):
                 TOAsigma = Decimal(self.flags['EMIN'])
         if self.flags.has_key('EQUAD'):
-            TOAsigma = sqrt(self.TOAsigma**2 + self.flags['EQUAD']**2)
+            TOAsigma = sqrt(TOAsigma**2 + self.flags['EQUAD']**2)
         if self.flags.has_key('EFAC'):
-            TOAsigma = Decimal(self.TOAsigma) * self.flags['EFAC']
+            TOAsigma = Decimal(TOAsigma) * self.flags['EFAC']
         if self.flags.has_key('to'):
             timeoffset = Decimal(('%.11f' % float(self.flags['to'])))/secperday
             ActualTOA = self.TOA + timeoffset
@@ -663,8 +663,38 @@ class TOAfile(object):
         fmtstr = """
 """
         fmtstr += '\n'
+        hasphasejump = False
+        currentphasejump = 0
+        accumulatephasejump = 0
+        jumpnumber = 0
+        hasjump = False
+        '''*** try to temporarily put PHASE/jumps in tempo2 format for tempo1 use'''
         for toas in self.list:
             if isinstance(toas, (list,tuple)):
+                if 'padd' in toas[0].flags and not hasphasejump:
+                    currentphasejump = toas[0].flags['padd']
+                    accumulatephasejump += toas[0].flags['padd']
+                    fmtstr += 'PHASE %s\n' % (currentphasejump)
+                    hasphasejump = True
+                elif 'padd' in toas[0].flags and hasphasejump:
+                    currentphasejump = toas[0].flags['padd'] - accumulatephasejump
+                    if not currentphasejump == 0.:
+                        fmtstr += 'PHASE %s\n' % (currentphasejump)
+                elif not 'padd' in toas[0].flags and hasphasejump:
+                    currentphasejump = 0 - accumulatephasejump
+                    fmtstr += 'PHASE %s\n' % (currentphasejump)
+                    hasphasejump = False
+
+                if 'jump' in toas[0].flags and jumpnumber == 0:
+                    jumpnumber = toas[0].flags['jump']
+                    fmtstr += 'JUMP\n'
+                elif 'jump' in toas[0].flags and not toas[0].flags['jump'] == jumpnumber:
+                    jumpnumber = toas[0].flags['jump']
+                    fmtstr += 'JUMP\n'
+                    fmtstr += 'JUMP\n'
+
+                '''*** try to temporarily put PHASE/jumps in tempo2 format for tempo1 use'''
+
                 fmtstr += '\n'.join([t.tempo2fmt() for t in toas])
                 fmtstr += '\n'
             elif isinstance(toas, TOAcommand) and not toas.cmd in ['EMAX', 'EFAC', 'EQUAD', 'MODE', 'EMIN']:
