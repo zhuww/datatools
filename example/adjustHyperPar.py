@@ -2,11 +2,13 @@ from datatools.tempo import  *
 from pylab import *
 import sys, cPickle
 from scipy.optimize import fmin_powell as minimize
-from scipy.optimize import leastsq
+#from scipy.optimize import leastsq as minimize
 
-ParamMap = ['M31410A:EQUAD', 'M31410B:EQUAD', 'ABPP1410:EQUAD', 'ABPP2380:EQUAD', 'M41410:EQUAD', 'M42380:EQUAD', 'ASP:EMIN', 'GASP:EMIN', 'GUPPI:EMIN', 'PUPPI:EMIN']
-parfile = '1713.ext.moreDMX.par'
-timfile = '1713.May.Weighted.tim'
+ParamMap = ['M31410A:EQUAD', 'M31410B:EQUAD', 'ABPP1410:EQUAD', 'ABPP2380:EQUAD', 'M41410:EQUAD', 'M42380:EQUAD', 'GASP-L:EMIN', 'GUPPI-L:EMIN', 'ASP-L:EMIN', 'PUPPI-L:EMIN', 'GASP-8:EMIN', 'GUPPI-8:EMIN', 'ASP-S:EMIN', 'PUPPI-S:EMIN']
+#ParamMap = ['800:EMIN', 'L:EMIN']
+#ParamMap = ['GASP-800:EMIN', 'GASP-L:EMIN','GUPPI-800:EMIN', 'GUPPI-L:EMIN']
+parfile = '1713.Sep.Paul.par'
+timfile = '1713.Sep.Paul.tim'
 init_param = []
 m = model(parfile)
 t = TOAfile(timfile)
@@ -23,8 +25,12 @@ def calChisq(params):
         value = params[i]
         for j in t.groups[grp]:
             t.toalist[j].flags[key] = Decimal(value)
-    ts = t.subgroup(groups = t.groups.keys())
+    #ts = t.subgroup(groups = t.groups.keys())
+    with open('1713.adjust_hyperpar.toa', 'w') as fout:
+        fout.write(t.tempo2fmt(tempo1use=True))
+    ts = TOAfile('1713.adjust_hyperpar.toa')
     m.tempofit(ts)
+    print 'overall:', m.dof, m.chisq
 
     SumFac = 0.
     Output = []
@@ -54,7 +60,7 @@ def calChisq(params):
 
 
 print calChisq(init_param)
-result = minimize(calChisq,init_param)
+result = minimize(calChisq,init_param,xtol=0.05, ftol=0.05, maxiter=100, maxfun=500 )
 #result,i = leastsq(calChisq,init_param)
 #xopt, fopt, iter = result[:3]
 #print xopt, fopt, iter

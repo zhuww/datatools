@@ -658,7 +658,7 @@ class TOAfile(object):
 
 
 
-    def tempo2fmt(self):
+    def tempo2fmt(self, tempo1use=False):
         """convert TOA file to tempo2 format"""
         fmtstr = """
 """
@@ -671,27 +671,28 @@ class TOAfile(object):
         '''*** try to temporarily put PHASE/jumps in tempo2 format for tempo1 use'''
         for toas in self.list:
             if isinstance(toas, (list,tuple)):
-                if 'padd' in toas[0].flags and not hasphasejump:
-                    currentphasejump = toas[0].flags['padd']
-                    accumulatephasejump += toas[0].flags['padd']
-                    fmtstr += 'PHASE %s\n' % (currentphasejump)
-                    hasphasejump = True
-                elif 'padd' in toas[0].flags and hasphasejump:
-                    currentphasejump = toas[0].flags['padd'] - accumulatephasejump
-                    if not currentphasejump == 0.:
+                if tempo1use:
+                    if 'padd' in toas[0].flags and not hasphasejump:
+                        currentphasejump = toas[0].flags['padd']
+                        accumulatephasejump += toas[0].flags['padd']
                         fmtstr += 'PHASE %s\n' % (currentphasejump)
-                elif not 'padd' in toas[0].flags and hasphasejump:
-                    currentphasejump = 0 - accumulatephasejump
-                    fmtstr += 'PHASE %s\n' % (currentphasejump)
-                    hasphasejump = False
+                        hasphasejump = True
+                    elif 'padd' in toas[0].flags and hasphasejump:
+                        currentphasejump = toas[0].flags['padd'] - accumulatephasejump
+                        if not currentphasejump == 0.:
+                            fmtstr += 'PHASE %s\n' % (currentphasejump)
+                    elif not 'padd' in toas[0].flags and hasphasejump:
+                        currentphasejump = 0 - accumulatephasejump
+                        fmtstr += 'PHASE %s\n' % (currentphasejump)
+                        hasphasejump = False
 
-                if 'jump' in toas[0].flags and jumpnumber == 0:
-                    jumpnumber = toas[0].flags['jump']
-                    fmtstr += 'JUMP\n'
-                elif 'jump' in toas[0].flags and not toas[0].flags['jump'] == jumpnumber:
-                    jumpnumber = toas[0].flags['jump']
-                    fmtstr += 'JUMP\n'
-                    fmtstr += 'JUMP\n'
+                    if 'jump' in toas[0].flags and jumpnumber == 0:
+                        jumpnumber = toas[0].flags['jump']
+                        fmtstr += 'JUMP\n'
+                    elif 'jump' in toas[0].flags and not toas[0].flags['jump'] == jumpnumber:
+                        jumpnumber = toas[0].flags['jump']
+                        fmtstr += 'JUMP\n'
+                        fmtstr += 'JUMP\n'
 
                 '''*** try to temporarily put PHASE/jumps in tempo2 format for tempo1 use'''
 
@@ -910,7 +911,7 @@ def covtotempo2(timfile, parfile, newtimfile='', newparfile=''):
 from commands import getoutput
 def tempofit(parfile, toafile=None, pulsefile=None):
     """
-tempofit(parfile, toafile=None, pulsefile=None):
+    tempofit(parfile, toafile=None, pulsefile=None):
     use tempo to fit the parfile and toafile, specify pulsefile to use pulse number.
     """
     if toafile == None:
