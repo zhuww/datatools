@@ -1,3 +1,9 @@
+"""
+An code for running MCMC simulation to determine the confidence range of tempo parameters. Code in use:
+    runmcmc.py : the main driving program
+    plotmc.py : the plotting program
+    ProgressBar.py : for plotting the progress bar
+"""
 from datatools.tempo import tempofit, tempo2fit, touchparfile, uniquename, PARfile #, model, TOAfile
 from math import *
 from decimal import *
