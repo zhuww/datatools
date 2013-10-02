@@ -9,7 +9,7 @@ from fileio import *
 #from numpy import float64 as __Decimal
 from decimal import Decimal as __Decimal
 from decimal import getcontext
-getcontext().prec = 30
+getcontext().prec = 25
 secperday = 86400
 def Decimal(value):
     """Convert string segment from TOA line to a float number.
@@ -924,13 +924,13 @@ def tempofit(parfile, toafile=None, pulsefile=None):
     try:
         chisq = line.split('/')[1].split(':')[1]
     except:
+        #print parfile, toafile
         pass
-        #print line
     try:
         dof = int(line.split('/')[2].strip(' ').split()[0])
     except:
         #print line
-        dof =315
+        dof = 13722
     try:
         chisq = float(chisq)
     except:
