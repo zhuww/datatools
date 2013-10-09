@@ -65,7 +65,7 @@ class progressBar:
             hours = 0
             minutes = 0
             seconds = 0
-        self.progBar += 'ETL:%ih:%im:%is' % (hours, minutes, seconds)
+        self.progBar += 'ETL:%ih%im%is' % (hours, minutes, seconds)
 
     def __str__(self):
         return str(self.progBar)

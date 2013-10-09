@@ -1037,11 +1037,11 @@ paramap = {
         'FD4  ':'FD4',
         'FD*  ':'FD5',
         }
-for i in range(200):
+for i in range(500):
     key = 'DX' + str(i).rjust(3,'0')
     value = 'DMX_' + str(i).rjust(4,'0')
     paramap[key] = value
-for i in range(200):
+for i in range(500):
     key = 'D1' + str(i).rjust(3,'0')
     value = 'DMX1_' + str(i).rjust(4,'0')
     paramap[key] = value
@@ -1971,7 +1971,8 @@ class model(PARfile):
                 if Yerr == None:
                     subp = ax.plot(X, Y, '.', markeredgewidth=0, color=colors[grp], label=grp, **kwargs)
                 else:
-                    subp = ax.errorbar(X, Y, Yerr, fmt='.', color=colors[grp], markeredgewidth=1, mec=colors[grp], label=grp, **kwargs)
+                    #subp = ax.errorbar(X, Y, Yerr, fmt='.', color=colors[grp], markeredgewidth=1, mec=colors[grp], label=grp, **kwargs)
+                    subp = ax.errorbar(X, Y, Yerr, fmt='.', color=colors[grp], mec=colors[grp], label=grp, **kwargs)
             subplots.update({grp:subp})
             Xlimit[0] = min(min(X), Xlimit[0])
             Xlimit[1] = max(max(X), Xlimit[1])
