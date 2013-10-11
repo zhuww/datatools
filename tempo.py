@@ -27,6 +27,7 @@ def Decimal(value):
 
 
 Observatory_list = {
+        '@':   'Bary Center',
         '1':   'GBT',
         '2':   'QUABBIN',
         '3':   'ARECIBO',
@@ -1629,7 +1630,7 @@ class model(PARfile):
         self.prefitphase= self.prefitres*self.phase/self.res
         self.weight = data[:]['weight']
         from fileio import readcol
-        npulse= fromfile(tmppulsefile, sep='\n')
+        npulse= np.genfromtxt(tmppulsefile, dtype='int')
         #npulse= readcol(tmppulsefile, 0)
         self.toafile.npulse = npulse
         if self.chisq/self.dof < 2.: #if the fit is ok, then log the pulse number
@@ -1851,6 +1852,7 @@ class model(PARfile):
         labeldict = {
                 "number":"Number",
                 "date":"Date",
+                "year":"Year",
                 "mjd":"MJD",
                 "phase":'phase',
                 "err":'error',
@@ -1866,6 +1868,8 @@ class model(PARfile):
                 "prefit":r'prefit residual (${\rm \mu}$s)',
                 "DMX":r'Delta DM (pc cm$^{-3}$)',
                 }
+        def dayofyear(dt):
+            return float(dt.strftime('%j')) + float(dt.strftime('%H'))
         if ax == None:
             ax = subplot(111)
         if Ylabel == "DMX":
@@ -1879,6 +1883,9 @@ class model(PARfile):
             for i in DMX.keys():
                 if Xlabel == "date":
                     DMXR.append(MJD_to_datetime(float(DMXR1[i]+DMXR2[i])/2))
+                    DMXRErr.append((MJD_to_datetime(float(DMXR2[i])) - MJD_to_datetime(float(DMXR1[i])))/2)
+                elif Xlabel == "year":
+                    DMXR.append(dayofyear(MJD_to_datetime(float(DMXR1[i]+DMXR2[i])/2)))
                     DMXRErr.append((MJD_to_datetime(float(DMXR2[i])) - MJD_to_datetime(float(DMXR1[i])))/2)
                 else:
                     DMXR.append((float(DMXR1[i]+DMXR2[i])/2))
@@ -1916,6 +1923,8 @@ class model(PARfile):
             if Ylabel == "averes":
                 if Xlabel == "date":
                     X = [MJD_to_datetime(t) for t in self.avetoa[grp]]
+                elif Xlabel == 'year':
+                    X = [dayofyear(MJD_to_datetime(t)) for t in self.avetoa[grp]]
                 elif Xlabel == 'mjd':
                     from matplotlib.ticker import FormatStrFormatter
                     majorFormatter = FormatStrFormatter('%5.0f')
@@ -1947,6 +1956,8 @@ class model(PARfile):
                     Y = self.phase[idx]
                 if Xlabel == "date":
                     X = [MJD_to_datetime(t) for t in self.toa[idx]]
+                elif Xlabel == 'year':
+                    X = [dayofyear(MJD_to_datetime(t)) for t in self.toa[idx]]
                 elif Xlabel == "mjd":
                     from matplotlib.ticker import FormatStrFormatter
                     majorFormatter = FormatStrFormatter('%5.0f')
@@ -2005,8 +2016,13 @@ class model(PARfile):
         self.aveerr = {}
         self.avewrms = {}
         self.mediansigma = {}
+        self.toagrps = {}
+        self.toagrpkeys = {}
         if groups == '':
             keys = self.groups.keys()
+        elif groups == 'allinone':
+            self.groups.update({'all':range(len(toafile.toalist))})
+            keys = ['all']
         else:
             keys = groups
         for key in keys:
@@ -2028,6 +2044,8 @@ class model(PARfile):
                     grpkey = t
                     grpkeylist.append(grpkey)
                     subgrp[grpkey] = [i]
+            self.toagrps[key]  = subgrp
+            self.toagrpkeys[key] = grpkeylist
             for grpkey in grpkeylist:
                 idx = subgrp[grpkey]
                 avetoa = mean(toa[idx])
