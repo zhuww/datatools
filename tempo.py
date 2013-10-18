@@ -1852,7 +1852,7 @@ class model(PARfile):
         labeldict = {
                 "number":"Number",
                 "date":"Date",
-                "year":"Year",
+                "year":"day of the year",
                 "mjd":"MJD",
                 "phase":'phase',
                 "err":'error',
@@ -1869,7 +1869,7 @@ class model(PARfile):
                 "DMX":r'Delta DM (pc cm$^{-3}$)',
                 }
         def dayofyear(dt):
-            return float(dt.strftime('%j')) + float(dt.strftime('%H'))
+            return float(dt.strftime('%j')) + float(dt.strftime('%H'))/24
         if ax == None:
             ax = subplot(111)
         if Ylabel == "DMX":
@@ -1958,6 +1958,7 @@ class model(PARfile):
                     X = [MJD_to_datetime(t) for t in self.toa[idx]]
                 elif Xlabel == 'year':
                     X = [dayofyear(MJD_to_datetime(t)) for t in self.toa[idx]]
+                    ax.set_xlim([0,366])
                 elif Xlabel == "mjd":
                     from matplotlib.ticker import FormatStrFormatter
                     majorFormatter = FormatStrFormatter('%5.0f')
