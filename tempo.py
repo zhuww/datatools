@@ -1080,6 +1080,21 @@ class PARfile(object):
             elif items[0] == '#':pass
             elif items[0][0] == '#':pass
             elif items[0]== 'C':pass
+            elif items[0].upper() == 'JUMP' and items[1].startswith('-'):
+                jumptag = '%s %s %s' % tuple(items[:3])
+                self.manifest.append(jumptag)
+                if len(items) > 3:
+                    self.__dict__[jumptag] = [Decimal(items[3]), Decimal(0)]
+                    if len(items) > 4:
+                        if items[4] == '0':
+                            self.parameters[jumptag] = '0'
+                        else:
+                            self.parameters[jumptag] = '1'
+                    if len(items) > 5:
+                        self.__dict__[jumptag][1] = Decimal(items[5])
+                else:
+                    self.__dict__[jumptag] = (Decimal(0), Decimal(0))
+                    self.parameters[jumptag] = '1'
             elif len(items) == 2 and not items[0] in ['SINI', 'M2', 'XDOT']: 
                 self.__dict__[items[0]] = floatify(items[1])
                 self.manifest.append(items[0])
