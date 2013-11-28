@@ -213,6 +213,7 @@ class TOA(object):
         elif self._Observatory == '3':
             self._Observatory = 'ao'
         file = self.file.split('/')[-1].replace(' ','_').replace('-', '_')
+        file = file.ljust(10)[-15:]
         #print ActualTOA
         #fmtstr = '%s %s %s %s %s' % (file, self.frequency, str(ActualTOA.quantize(Decimal(0.00000000000001))).ljust(21, ' '), TOAsigma, self._Observatory)
         fmtstr = '%s %s %s %s %s' % (file, self.frequency, str(ActualTOA).ljust(21, ' ')[:21], TOAsigma, self._Observatory)
