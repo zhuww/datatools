@@ -7,6 +7,8 @@ from fileio import *
 #from SaveLoadable import MetaSaveLoader
 #from decimal import *
 #from numpy import float64 as __Decimal
+import matplotlib as mpl 
+mpl.rcParams['font.family'] = 'serif'
 from decimal import Decimal as __Decimal
 from decimal import getcontext
 getcontext().prec = 25
@@ -1059,6 +1061,8 @@ paramap = {
         'FD3  ':'FD3',
         'FD4  ':'FD4',
         'FD*  ':'FD5',
+        'DM001':'DM001',
+        'DM002':'DM002',
         }
 for i in range(500):
     key = 'DX' + str(i).rjust(3,'0')
@@ -1274,7 +1278,10 @@ class PARfile(object):
                 fd.seek(8, 1)
                 paramj = str(data['paramj'][0])
                 if not paramj == 'FD*  ':
-                    param = paramap[paramj]
+                    try:
+                        param = paramap[paramj]
+                    except KeyError:
+                        param = paramj
                     self.parlist.append(param)
                 #try:
                 self.err.append(float(str(bpf.__dict__[param][1])))
