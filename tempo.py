@@ -1063,6 +1063,8 @@ paramap = {
         'FD*  ':'FD5',
         'DM001':'DM001',
         'DM002':'DM002',
+        'eps1 ':'EPS1',
+        'eps2 ':'EPS2',
         }
 for i in range(500):
     key = 'DX' + str(i).rjust(3,'0')
@@ -1284,6 +1286,9 @@ class PARfile(object):
                         param = paramj
                     self.parlist.append(param)
                 #try:
+                if param == 'T0':
+                    if 'BINARY' in bpf.__dict__ and str(bpf.BINARY) == 'ELL1':
+                        param = 'TASC'
                 self.err.append(float(str(bpf.__dict__[param][1])))
                 #except:
                     #self.err.append(Decimal(0.05))
