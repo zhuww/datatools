@@ -2049,7 +2049,7 @@ class model(PARfile):
         return ax                
 
 
-    def average(self, groups='', laspe=0.5):
+    def average(self, groups='', lapse=0.5):
         """
         Performing the daily-average, 
         arguments: groups = [list of groups one wants to average] (Default all groups)
@@ -2088,7 +2088,7 @@ class model(PARfile):
             self.aveerr[key] = []
             for i in [x[1] for x in toagrp[1:]]:
                 t = toa[i]
-                if abs(t - grpkey) <= laspe:
+                if abs(t - grpkey) <= lapse:
                     subgrp[grpkey].append(i)
                 else:
                     grpkey = t
