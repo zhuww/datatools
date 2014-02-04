@@ -2143,4 +2143,26 @@ class model(PARfile):
             self.avewrms[key] = _wrms(self.averes[key],self.aveerr[key])
             self.mediansigma[key] = np.median(self.aveerr[key])
 
+def parseerror(val, err):
+    if not type(val) in [Decimal, __Decimal]:
+        val = __Decimal(str(val))
+    if not type(err) in [Decimal, __Decimal]:
+        err = __Decimar(str(err))
+    s, d ,e = err.as_tuple()
+    if int(d[0]) == 1:# and int(d[1]) >= 5:
+    #if int(d[0]) == 1 and not int(d[1]) == 0:
+    #if int(d[0]) == 1: #and int(d[1]) >= 5:
+        errdig = Decimal((s,d[:2],e+len(d)-2))
+        errstr = Decimal((0, d[:2], 0))
+        val = str(val.quantize(errdig))
+    else:
+        errdig = Decimal((s,d[:1],e+len(d)-1))
+        errstr = Decimal((0, d[:1], 0)) 
+        val = str(val.quantize(errdig))
+    if not val.find('E') == -1: 
+        v,e = val.split('E')
+        result = r'$%s(%s)\times10^{%s}$' % (v,errstr, e)
+    else:
+        result = r'%s(%s)' % (val,errstr)
+    return result
 
