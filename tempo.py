@@ -1458,13 +1458,17 @@ class PARfile(object):
                 for i in range(len(self.manifest)):
                     par = self.manifest[i]
                     if not par.find('JUMP') == -1:
-                        j = par.split('_')[-1]
-                        newjumppar = 'JUMP -jump ' + j
+                        if not par.find(' -') == -1:
+                            newjumppar = par
+                        else:
+                            j = par.split('_')[-1]
+                            newjumppar = 'JUMP -jump ' + j
                         self.manifest[i] = newjumppar
-                        self.__dict__[newjumppar] = self.__dict__[par]
-                        del self.__dict__[par]
-                        self.parameters[newjumppar] = self.parameters[par]
-                        del self.parameters[par]
+                        if not newjumppar == par:
+                            self.__dict__[newjumppar] = self.__dict__[par]
+                            del self.__dict__[par]
+                            self.parameters[newjumppar] = self.parameters[par]
+                            del self.parameters[par]
                 if self.BINARY == 'DD' and self.__dict__.has_key('PAASCNODE'):
                     self.BINARY = 'T2'
                     self.ECC = self.E
