@@ -3,7 +3,7 @@
 #import numpy, os
 #from numpy import mean, std, var, array, double, angle
 from math import *
-from fileio import *
+#from fileio import *
 #from SaveLoadable import MetaSaveLoader
 #from decimal import *
 #from numpy import float64 as __Decimal
@@ -1682,7 +1682,7 @@ class model(PARfile):
         self.prefitres= data[:]['prefit_sec']*1.e6
         self.prefitphase= self.prefitres*self.phase/self.res
         self.weight = data[:]['weight']
-        from fileio import readcol
+        #from fileio import readcol
         npulse= np.genfromtxt(tmppulsefile, dtype='int')
         #npulse= readcol(tmppulsefile, 0)
         self.toafile.npulse = npulse
