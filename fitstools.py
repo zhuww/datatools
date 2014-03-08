@@ -1,4 +1,5 @@
 import pyfits, os, re
+import numpy as np
 #from numpy import mean
 #from numpy import mean
 #import commands
@@ -48,16 +49,18 @@ class fitsfile(object):
     def gettable(self,block=1,cols=None):
         '''Return the table of some block of the FITS file'''
         table = self.file[block].data
-        if cols == None: return table
+        if cols == None: 
+            return table
         else:
-            names = self.colinfo(block).names
-            indics = [names.index(item) for item in cols]
-            newtable= []
-            for row in table:
-                newtable.append([row[i] for i in indics])
-        del(table)
-        table = newtable
-        return table
+            #names = self.colinfo(block).names
+            #indics = [names.index(item) for item in cols]
+            #newtable= []
+            #for row in table:
+                #newtable.append([row[i] for i in indics])
+        #del(table)
+        #table = newtable
+            newtable = np.vstack([table.field(col) for col in cols]).T
+        return newtable
 
     def save(self):
         '''Save the updated FITS file'''
