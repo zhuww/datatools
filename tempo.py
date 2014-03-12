@@ -1382,9 +1382,20 @@ class PARfile(object):
                 dd = str(d).zfill(2)
                 mm = str(m).zfill(2)
                 ss = str(ds).zfill(2)+'.'+fs
-                new.__dict__[p][0] = ':'.join([dd,mm,ss])
+                new.__dict__[p][0] = (':'.join([dd,mm,ss]))[:32]
             elif p == 'SINI':
-                pass
+                sini = float(new.__dict__[p][0])
+                #new.__dict__[p][0] += Decimal(repr(err[i]*self.err[i]/self.Nfac*stepsize))
+                sign = sini/abs(sini)
+                cosi = sqrt(1.-sini**2)
+                dsini = self.err[i]/self.Nfac*stepsize
+                dcosi = sini/cosi*(np.random.rand()-0.5)*dsini
+                cosi = min( cosi+dcosi, 1)
+                sini = sqrt(1.-cosi**2)
+                sini *= sign
+                new.__dict__[p][0] = Decimal(repr(sini))
+
+                #pass
             #elif p == 'PAASCNODE':
                 #new.__dict__[p][0] = new.__dict__[p][0] + Decimal(np.random.rand()*10/self.Nfac*stepsize)
             else:
