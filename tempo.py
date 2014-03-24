@@ -1694,7 +1694,13 @@ class model(PARfile):
         self.chisq = chisq 
         self.dof = dof
         #try:
-        self.newpar = PARfile(self.psrname + '.par')
+        try:
+            self.newpar = PARfile(self.psrname + '.par')
+        except:
+            class dummy():
+                parfile = ''
+            self.newpar = dummy()
+            self.newpar.parfile = self.psrname+'.par'
         #except IndexError:
             #print self.parfile
             #print self.toafile.toafile
