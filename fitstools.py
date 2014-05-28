@@ -7,12 +7,12 @@ from datatools import Exceptions
 
 class fitsfile(object):
     '''A group of APIs for accessing the FITS files'''
-    def __init__(self, file=None):
+    def __init__(self, file=None, **kws):
         '''Open up a FITS file for editing and inspection'''
         if not isinstance(file, basestring):
             raise TypeError, 'Must specify a name for the fits file.'
         elif os.access(file,os.R_OK):
-            self.file = pyfits.open(file)
+            self.file = pyfits.open(file, **kws)
         else:raise  Exceptions.FileError(file)
 
     def hdread(self, key, block=0):
