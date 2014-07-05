@@ -2147,9 +2147,12 @@ class model(PARfile):
             Xlimit = [inf,0]
         subplots = {}
         for grp in groups:
+            Xerr = None
             Yerr = None
             if Ylabel == "averes":
                 idx = [i for i,t in enumerate(self.avetoa[grp]) if (t >= MJDSTA and t <= MJDFIN)]
+                Y = [ self.averes[grp][i] for i in idx]
+                Yerr = [self.aveerr[grp][i] for i in idx]
                 if Xlabel == "date":
                     #X = [MJD_to_datetime(t) for t in self.avetoa[grp]]
                     X = [MJD_to_datetime(self.avetoa[grp][i]) for i in idx]
@@ -2162,17 +2165,21 @@ class model(PARfile):
                     ax.xaxis.set_major_formatter(majorFormatter)
                     X = [float(self.avetoa[grp][i]) for i in idx]
                 elif Xlabel == "ophase":
-                    raise "Not allowed to plot averes on phase"
+                    #raise "Not allowed to plot averes on phase"
+                    X = [self.aveoph[grp][i] for i in idx]
+                    Xerr = [self.opherr[grp][i] for i in idx]
                 elif Xlabel == "freq" or Xlabel == "frequency":
-                    raise "Not allowed to plot averes vs frequence"
+                    #raise "Not allowed to plot averes vs frequence"
+                    X = self.avefrq[grp]
+                    Xerr = self.frqerr[grp]
+                    Y = self.averes[grp]
+                    Yerr = self.aveerr[grp]
                 elif Xlabel == "number":
                     raise "Not allowed to plot averes vs number"
                 elif Xlabel == "phase":
                     raise "Not allowed to plot averes vs phase"
                 else:
                     raise "X label %s not allowed" % Xlabel
-                Y = [ self.averes[grp][i] for i in idx]
-                Yerr = [self.aveerr[grp][i] for i in idx]
             else:
                 #idx = self.groups[grp]
                 idx = [j for j in self.groups[grp] if (self.toa[j] >= float(MJDSTA) and self.toa[j] <= float(MJDFIN)) ]
@@ -2206,17 +2213,18 @@ class model(PARfile):
                     X = self.phase[idx]
                 else:
                     raise "X label %s not allowed" % Xlabel
+            #print MJDSTA, MJDFIN, len(idx), len(X),len(Y),len(Xerr),len(Yerr)
             if colors == None:
                 if Yerr == None:
                     subp = ax.plot(X, Y, '.', markeredgewidth=0, label=grp, **kwargs)
                 else:
-                    subp = ax.errorbar(X, Y, Yerr, fmt='.', mew=0, label=grp, **kwargs)
+                    subp = ax.errorbar(X, Y, yerr=Yerr, xerr=Xerr, fmt='.', mew=0, label=grp, **kwargs)
             else:
                 if Yerr == None:
                     subp = ax.plot(X, Y, '.', markeredgewidth=0, color=colors[grp], label=grp, **kwargs)
                 else:
                     #subp = ax.errorbar(X, Y, Yerr, fmt='.', color=colors[grp], markeredgewidth=1, mec=colors[grp], label=grp, **kwargs)
-                    subp = ax.errorbar(X, Y, Yerr, fmt='.', color=colors[grp], mec=colors[grp], label=grp, **kwargs)
+                    subp = ax.errorbar(X, Y, yerr=Yerr, xerr=Xerr, fmt='.', color=colors[grp], mec=colors[grp], label=grp, **kwargs)
             subplots.update({grp:subp})
             Xlimit[0] = min(min(X), Xlimit[0])
             Xlimit[1] = max(max(X), Xlimit[1])
@@ -2233,25 +2241,33 @@ class model(PARfile):
         return ax                
 
 
-    def average(self, groups='', lapse=0.5):
+    def average(self, groups='', lapse=0.5, freqbin=None):
         """
         Performing the daily-average, 
         arguments: groups = [list of groups one wants to average] (Default all groups)
         lapse=0.5 (the window size for daily averaging, default to half day)
         """
-        from numpy import mean, sum, array
+        from numpy import mean, sum, array, std
         toafile = self.toafile
         toa = self.toa
         res = self.res
         err = self.err
+        freq = self.freq
+        ophase = self.ophase
         weight = self.weight
         self.avetoa = {}
         self.averes = {}
         self.aveerr = {}
+        self.avefrq = {}
+        self.frqerr = {}
+        self.aveoph = {}
+        self.opherr = {}
         self.avewrms = {}
         self.mediansigma = {}
         self.toagrps = {}
         self.toagrpkeys = {}
+        self.freqgrps = {}
+        self.freqgrpkeys = {}
         if groups == '':
             keys = self.groups.keys()
         elif groups == 'allinone':
@@ -2261,50 +2277,103 @@ class model(PARfile):
             keys = groups
         for key in keys:
             idx = self.groups[key]
-            toagrp = [(toa[i], i) for i in idx]
-            toagrp.sort(key = lambda x: x[0])
-            grpkey = toagrp[0][0]
-            subgrp = {}
-            subgrp[grpkey] = [toagrp[0][1]]
-            grpkeylist =[grpkey]
             self.avetoa[key] = []
             self.averes[key] = []
             self.aveerr[key] = []
-            for i in [x[1] for x in toagrp[1:]]:
-                t = toa[i]
-                if abs(t - grpkey) <= lapse:
-                    subgrp[grpkey].append(i)
-                else:
-                    grpkey = t
-                    grpkeylist.append(grpkey)
-                    subgrp[grpkey] = [i]
-            self.toagrps[key]  = subgrp
-            self.toagrpkeys[key] = grpkeylist
-            for grpkey in grpkeylist:
-                idx = subgrp[grpkey]
-                avetoa = mean(toa[idx])
-                weightsum = sum(weight[idx])
-                ressum = sum(res[idx]*weight[idx])
-                averes = ressum/weightsum
-                N = len(idx)
-                if N > 1:
-                    sigma = sqrt((sum([(res[i] - averes)**2*weight[i] for i in idx])/(N-1))/weightsum)
-                else:
-                    sigma = err[idx[0]]
-                if sigma == 0.:
-                    print "zero res err caused by similar residual in the same group -- ignored"
-                    print idx
-                    print res[idx], averes
-                    print toa[idx]
-                    for t in [ self.toafile.toalist[i] for i in idx]:
-                        print t.file, t.TOA
-                        print t.line
-                self.avetoa[key].append(avetoa) 
-                self.averes[key].append(averes)
-                self.aveerr[key].append(sigma)
-            self.avetoa[key] = array(self.avetoa[key])
-            self.averes[key] = array(self.averes[key])
-            self.aveerr[key] = array(self.aveerr[key])
+            self.aveoph[key] = []
+            self.avefrq[key] = []
+            self.opherr[key] = []
+            self.frqerr[key] = []
+            if not freqbin == None:
+                frqgrp = [(freq[i], i) for i in idx]
+                frqgrp.sort(key = lambda x: x[0])
+                freqkey = frqgrp[0][0]
+                frqsubgrp = {}
+                frqsubgrp[freqkey] = [frqgrp[0][1]]
+                frqkeylist = [freqkey]
+                for i in [x[1] for x in frqgrp[1:]]:
+                    f = freq[i]
+                    if abs(f - freqkey) <= freqbin:
+                        frqsubgrp[freqkey].append(i)
+                    else:
+                        freqkey = f
+                        frqkeylist.append(freqkey)
+                        frqsubgrp[freqkey] = [i]
+                self.freqgrps[key]  = frqsubgrp
+                self.freqgrpkeys[key] = frqkeylist
+                for grpkey in self.freqgrpkeys[key]:
+                    idx = self.freqgrps[key][grpkey]
+                    weightsum = sum(weight[idx])
+                    ressum = sum(res[idx]*weight[idx])
+                    frqsum = sum(freq[idx]*weight[idx])
+                    averes = ressum/weightsum
+                    avefrq = frqsum/weightsum
+                    frqerr = (max(freq[idx]) - min(freq[idx]))/2.
+                    N = len(idx)
+                    if N > 1:
+                        sigma = sqrt((sum([(res[i] - averes)**2*weight[i] for i in idx])/(N-1))/weightsum)
+                    else:
+                        sigma = err[idx[0]]
+                    self.averes[key].append(averes)
+                    self.aveerr[key].append(sigma)
+                    self.avefrq[key].append(avefrq)
+                    self.frqerr[key].append(frqerr)
+                self.averes[key] = array(self.averes[key])
+                self.aveerr[key] = array(self.aveerr[key])
+                self.avefrq[key] = array(self.avefrq[key])
+                self.frqerr[key] = array(self.frqerr[key])
+            else:
+                toagrp = [(toa[i], i) for i in idx]
+                toagrp.sort(key = lambda x: x[0])
+                grpkey = toagrp[0][0]
+                subgrp = {}
+                subgrp[grpkey] = [toagrp[0][1]]
+                grpkeylist =[grpkey]
+                for i in [x[1] for x in toagrp[1:]]:
+                    t = toa[i]
+                    if abs(t - grpkey) <= lapse:
+                        subgrp[grpkey].append(i)
+                    else:
+                        grpkey = t
+                        grpkeylist.append(grpkey)
+                        subgrp[grpkey] = [i]
+                self.toagrps[key]  = subgrp
+                self.toagrpkeys[key] = grpkeylist
+                for grpkey in self.toagrpkeys[key]:
+                    idx = self.toagrps[key][grpkey]
+                    avetoa = mean(toa[idx])
+                    weightsum = sum(weight[idx])
+                    ressum = sum(res[idx]*weight[idx])
+                    averes = ressum/weightsum
+                    if self.__dict__.has_key('BINARY'):
+                        aveoph = mean(ophase[idx])
+                        opherr = std(ophase[idx])
+                    N = len(idx)
+                    if N > 1:
+                        sigma = sqrt((sum([(res[i] - averes)**2*weight[i] for i in idx])/(N-1))/weightsum)
+                    else:
+                        sigma = err[idx[0]]
+                    if sigma == 0.:
+                        print "zero res err caused by similar residual in the same group -- ignored"
+                        print idx
+                        print res[idx], averes
+                        print toa[idx]
+                        for t in [ self.toafile.toalist[i] for i in idx]:
+                            print t.file, t.TOA
+                            print t.line
+                    self.avetoa[key].append(avetoa) 
+                    self.averes[key].append(averes)
+                    self.aveerr[key].append(sigma)
+                    if self.__dict__.has_key('BINARY'):
+                        self.aveoph[key].append(aveoph)
+                        self.opherr[key].append(opherr)
+                self.avetoa[key] = array(self.avetoa[key])
+                self.averes[key] = array(self.averes[key])
+                self.aveerr[key] = array(self.aveerr[key])
+                if self.__dict__.has_key('BINARY'):
+                    self.aveoph[key] = array(self.aveoph[key])
+                    self.opherr[key] = array(self.opherr[key])
+
             def _wrms(res, err):
                 nres = []
                 nerr = []
