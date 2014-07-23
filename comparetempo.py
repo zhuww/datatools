@@ -8,11 +8,13 @@ if __name__ == '__main__':
     parser.add_argument('par2', help='parfile 2')
     parser.add_argument('--withdmx', help='withdmx', type=bool, default=False)
     parser.add_argument('--plot', help='makeplot', type=bool, default=False)
+    parser.add_argument('--LegendLoc', help='LegendLoc', type=int, default=2)
     values = parser.parse_args(sys.argv[1:])
 
     f1, f2 = values.par1, values.par2
     withdmx = values.withdmx
     makeplot = values.plot
+    LegLoc = values.LegendLoc
     #print withdmx, type(withdmx)
 
     m1 = model(f1)
@@ -43,10 +45,13 @@ if __name__ == '__main__':
             err1 = float(m1.__dict__[p][1])
             err2 = float(m2.__dict__[p][1])
         else:
-            val1 = float(m1.__dict__[p][0])
-            val2 = float(m2.__dict__[p][0])
-            err1 = float(m1.__dict__[p][1])
-            err2 = float(m2.__dict__[p][1])
+            try:
+                val1 = float(m1.__dict__[p][0])
+                val2 = float(m2.__dict__[p][0])
+                err1 = float(m1.__dict__[p][1])
+                err2 = float(m2.__dict__[p][1])
+            except:
+                pass
         dev = abs(val1-val2)/max((err1, err2))
         value1.append(val1)
         value2.append(val2)
@@ -58,13 +63,13 @@ if __name__ == '__main__':
             redlist.append(i)
         i+=1
 
-    print par
     if makeplot:
         #from pylab import *
         import matplotlib.pyplot as plt
         fig, ax1 = plt.subplots()#figsize=(10,6))
         fig.canvas.set_window_title('compare %s %s' % ( f1, f2))
         ax1.yaxis.grid(True, linestyle='-', which='major', color='lightblue')
+        ax1.xaxis.grid(True, linestyle='-', which='major', color='lightblue')
         xticks = plt.setp(ax1, xticks=range(len(par)))
         xtickNames = plt.setp(ax1, xticklabels=par)
         #xtickNames = plt.setp(ax1, xticklabels=[('%s' % s) for s in range(len(par))])
@@ -72,9 +77,10 @@ if __name__ == '__main__':
         xvals = np.array(range(len(par)))
         numpars = len(par)
         ax1.set_xlim(0.5, numpars+0.5)
-        ax1.errorbar(xvals, (np.array(value2) - np.array(value1))/np.array(error1), yerr=np.array(error2)/np.array(error1), fmt='r.')
-        ax1.errorbar(xvals, (np.array(value1) - np.array(value1))/np.array(error1), yerr=np.ones(len(error1)), fmt='b.')
+        l1 = ax1.errorbar(xvals, (np.array(value2) - np.array(value1))/np.array(error1), yerr=np.array(error2)/np.array(error1), fmt='r.')
+        l2 = ax1.errorbar(xvals, (np.array(value1) - np.array(value1))/np.array(error1), yerr=np.ones(len(error1)), fmt='b.')
         ax1.set_xlim(0, len(par))
+        ax1.legend([l2,l1], [f1,f2], loc=LegLoc, numpoints=1)
         #print ax1.get_ticks(xvals)
         #print ax1.get_ticklabels(xvals)
         plt.show()
