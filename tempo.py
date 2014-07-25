@@ -2125,7 +2125,7 @@ class model(PARfile):
                 if colors == None:
                     ax.errorbar(DMXR, DMXvalue, xerr=DMXRErr, yerr=DMXerror, fmt='.', **kwargs)
                 else:
-                    ax.errorbar(DMXR, DMXvalue, xerr=DMXRErr, yerr=DMXe, fmt='.', color=colors[grp], **kwargs)
+                    ax.errorbar(DMXR, DMXvalue, xerr=DMXRErr, yerr=DMXerror, fmt='.', color=colors[grp], **kwargs)
             except ValueError:
                 print 'R: ', DMXR
                 print 'value: ', DMXvalue
