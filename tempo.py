@@ -2419,3 +2419,21 @@ def parseerror(val, err):
         result = r'%s(%s)' % (val,errstr)
     return result
 
+def read_design(filename='design.tmp',include_DC=True,sort=False):
+   dat = read_records(filename,offset=16)
+   ntoa = dat.shape[0]
+   npar = dat.shape[1] - 2
+   t = dat[:,0]
+   w = dat[:,1]
+   if include_DC:
+       A = numpy.zeros((ntoa,npar+1))
+       A[:,1:] = dat[:,2:]
+       A[:,0] = 1.0
+   else:
+       A = dat[:,2:]
+   if sort:
+       idx = numpy.argsort(t)
+       t = t[idx]
+       w = w[idx]
+       A = A[idx,:]
+   return (t,w,A)
