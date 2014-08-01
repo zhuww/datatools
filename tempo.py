@@ -2419,6 +2419,41 @@ def parseerror(val, err):
         result = r'%s(%s)' % (val,errstr)
     return result
 
+import struct, numpy
+def read_records(filename,offset=0):
+    """Reads a fortrans 'record' file (ie like what TEMPO outputs) and
+    returns the contents as a numpy array.  It is assumed that the 
+    record values are all double-precicsion floating point."""
+    fsize = os.path.getsize(filename)
+    f = open(filename, "r")
+    f.seek(offset,0)
+    # First get record length
+    l = struct.unpack("=i", f.read(4))[0]
+    #print l
+    if (l<=0):
+        raise RuntimeError("Invalid record length (%d) in file '%s'" %
+                (l, filename))
+    # Check first record for appropriate format
+    f.seek(l,1)
+    l2 = struct.unpack("=i", f.read(4))[0]
+    if (l != l2):
+        raise RuntimeError("File does not appear to contain a valid fortran record (l1=%d, l2=%d)" % (l, l2))
+    #Everything looks good, rewind to beginning and read data.
+    f.seek(offset,0)
+    read_size = l + 8 # Data size plus two ints
+    rec_len = l / 8      # Assumes data are doubles
+    num_rec = (fsize - offset)/read_size
+    fmt_str = "=i" + "d"*rec_len + "i"
+    dat = numpy.zeros((num_rec,rec_len))
+    raw = f.read(read_size)
+    nrec = 0
+    while (len(raw)==read_size):
+        dat[nrec,:] = numpy.array(struct.unpack(fmt_str,raw))[1:-1]
+        raw = f.read(read_size)
+        nrec += 1
+    f.close()
+    return dat
+
 def read_design(filename='design.tmp',include_DC=True,sort=False):
    dat = read_records(filename,offset=16)
    ntoa = dat.shape[0]
