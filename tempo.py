@@ -985,9 +985,9 @@ def tempofit(parfile, toafile=None, pulsefile=None):
     if toafile == None:
         toafile = ''
     if pulsefile == None:
-        line = getoutput("tempo -w -c -f %s %s | grep 'Chisqr/nfree'" % (parfile, toafile))
+        line = getoutput("tempo -w -c -D -f %s %s | grep 'Chisqr/nfree'" % (parfile, toafile))
     else:
-        line = getoutput("tempo -w -c -f %s %s -ni %s | grep 'Chisqr/nfree'" % (parfile, toafile, pulsefile))
+        line = getoutput("tempo -w -c -D -f %s %s -ni %s | grep 'Chisqr/nfree'" % (parfile, toafile, pulsefile))
     #print line
     try:
         chisq = line.split('/')[1].split(':')[1]
@@ -1666,7 +1666,7 @@ class model(PARfile):
         if self.__dict__.has_key('DMX') or self.__dict__.has_key('DMX_0001'):
             self.dmxlist = getDMX(self)
 
-    def tempofit(self, toafile, pulsefile=None, checkTOAs=False):
+    def tempofit(self, toafile, pulsefile=None, checkTOAs=False, DesignMatrix=False):
         """
         model.tempofit(toafile, pulsefile=None):
         use tempo to fit the parfile and toafile, specify pulsefile to use pulse number.
@@ -1762,13 +1762,22 @@ class model(PARfile):
         if pulsefile == None:
             if toafile.__dict__.has_key('npulse'):
                 savetxt(tmppulsefile, toafile.npulse, fmt='%.0f')
-                line = getoutput("tempo  -f %s %s -ni %s -j| grep 'Chisqr/nfree'" % (self.parfile, toafile.toafile, tmppulsefile))
+                if DesignMatrix:
+                    line = getoutput("tempo -D -f %s %s -ni %s -j| grep 'Chisqr/nfree'" % (self.parfile, toafile.toafile, tmppulsefile))
+                else:
+                    line = getoutput("tempo -f %s %s -ni %s -j| grep 'Chisqr/nfree'" % (self.parfile, toafile.toafile, tmppulsefile))
                 #print 'tempo  -f %s %s -ni %s -j' % (self.parfile, toafile.toafile, tmppulsefile)
             else:
-                line = getoutput("tempo -f %s %s -j -no %s| grep 'Chisqr/nfree'" % (self.parfile, toafile.toafile, tmppulsefile))
+                if DesignMatrix:
+                    line = getoutput("tempo -D -f %s %s -j -no %s| grep 'Chisqr/nfree'" % (self.parfile, toafile.toafile, tmppulsefile))
+                else:
+                    line = getoutput("tempo -f %s %s -j -no %s| grep 'Chisqr/nfree'" % (self.parfile, toafile.toafile, tmppulsefile))
                 #print tmppulsefile
         else:
-            line = getoutput("tempo  -f %s %s -ni %s -j| grep 'Chisqr/nfree'" % (self.parfile, toafile.toafile, pulsefile))
+            if DesignMatrix:
+                line = getoutput("tempo -D -f %s %s -ni %s -j| grep 'Chisqr/nfree'" % (self.parfile, toafile.toafile, pulsefile))
+            else:
+                line = getoutput("tempo -f %s %s -ni %s -j| grep 'Chisqr/nfree'" % (self.parfile, toafile.toafile, pulsefile))
             tmppulsefile = pulsefile
         self.line = line
         try:
