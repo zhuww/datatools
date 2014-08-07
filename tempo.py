@@ -1183,7 +1183,7 @@ class PARfile(object):
                 else:
                     self.__dict__[items[0]] = value
                 self.manifest.append(items[0])
-            elif items[0].startswith('T2E'):
+            elif items[0].startswith('T2E') or items[0].startswith('ECORR'):
                 if len(items) >= 4:
                     T2Etag = ' '.join(items[0:3]) 
                     value = floatify(items[3])
