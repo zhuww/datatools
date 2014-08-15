@@ -459,6 +459,8 @@ class TOAfile(object):
             jump = 0
             if 'i' in toa.flags:
                 info = toa.flags['i']
+            elif 'f' in toa.flags:
+                info = toa.flags['f']
             if toa.flags.has_key('padd'):
                 phase = float(toa.flags['padd'])
                 if phasegroups.has_key(info):
