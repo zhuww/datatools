@@ -471,9 +471,9 @@ class TOAfile(object):
                 else:
                     phasegroups[info] = phase
             for key in toa.flags:
-                if key == 'i':
-                    pass
-                elif key == 'jump':
+                #if key == 'i':
+                    #pass
+                if key == 'jump':
                     jump = toa.flags['jump']
                 elif key == 'padd':
                     #phase = float(toa.flags['padd'])
@@ -2279,15 +2279,20 @@ class model(PARfile):
         self.toagrpkeys = {}
         self.freqgrps = {}
         self.freqgrpkeys = {}
+        idxgroups = self.groups
         if groups == '':
             keys = self.groups.keys()
         elif groups == 'allinone':
             self.groups.update({'all':range(len(toafile.toalist))})
             keys = ['all']
         else:
-            keys = groups
+            if type(groups) == list:
+                keys = groups
+            elif type(groups) == dict:
+                keys = groups.keys()
+                idxgroups = groups
         for key in keys:
-            idx = self.groups[key]
+            idx = idxgroups[key]
             self.avetoa[key] = []
             self.averes[key] = []
             self.aveerr[key] = []
