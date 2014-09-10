@@ -1163,14 +1163,15 @@ class PARfile(object):
                 jumpalias = 'JUMP_' + str(JumpCount)
                 self.manifest.append(jumptag)
                 if len(items) > 3:
-                    self.__dict__[jumptag] = [Decimal(items[3]), Decimal(0)]
+                    #self.__dict__[jumptag] = [Decimal(items[3]), Decimal(0)]
                     if len(items) > 4:
                         if items[4] == '0':
                             self.parameters[jumptag] = '0'
+                            self.__dict__[jumptag] = [Decimal(items[3]), Decimal(0)]
                         else:
                             self.parameters[jumptag] = '1'
                     if len(items) > 5:
-                        self.__dict__[jumptag][1] = Decimal(items[5])
+                        self.__dict__[jumptag] = [Decimal(items[3]), Decimal(items[5])]
                 else:
                     self.__dict__[jumptag] = (Decimal(0), Decimal(0))
                     self.parameters[jumptag] = '1'
@@ -1287,8 +1288,10 @@ class PARfile(object):
                 if item in self.parameters.keys() :
                     if item.startswith('DMX'):
                         text += '%s\t%s\t%s\t%s\n' % (item, self.__dict__[item][0], self.parameters[item] ,self.__dict__[item][1])#).replace('E+', 'D+').replace('E-','D-')
-                    else:
+                    elif self.parameters[item] == '1':
                         text += '%s\t%s\t%s\t%s\n' % (item, self.__dict__[item][0], self.parameters[item] ,self.__dict__[item][1])#).replace('E+', 'D+').replace('E-','D-')
+                    else:
+                        text += '%s\t%s\t%s\n' % (item, self.__dict__[item], self.parameters[item])
                 else:
                     text += ('%s\t%s\n' % (item, self.__dict__[item])).replace('D+00','')
             f.write(text)
