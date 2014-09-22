@@ -1291,16 +1291,19 @@ class PARfile(object):
                     elif self.parameters[item] == '1':
                         text += '%s\t%s\t%s\t%s\n' % (item, self.__dict__[item][0], self.parameters[item] ,self.__dict__[item][1])#).replace('E+', 'D+').replace('E-','D-')
                     else:
-                        text += '%s\t%s\t%s\n' % (item, self.__dict__[item], self.parameters[item])
+                        if type(self.__dict__[item]) == list:
+                            text += '%s\t%s\t%s\t%s\n' % (item, self.__dict__[item][0], self.parameters[item], self.__dict__[item][1])
+                        else:
+                            text += '%s\t%s\t%s\n' % (item, self.__dict__[item], self.parameters[item])
                 else:
                     text += ('%s\t%s\n' % (item, self.__dict__[item])).replace('D+00','')
             f.write(text)
     def freezeall(self, key=None):
-        import re
         if key == None:
             for p in self.parameters:
                 self.parameters[p] = '0'
         else:
+            import re
             for p in self.parameters:
                 if not re.match(key, p) == None:
                     #print 'freezed parameter %s' % p
