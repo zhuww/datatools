@@ -9,8 +9,45 @@ from numpy.core.records import fromfile
 #from SaveLoadable import MetaSaveLoader
 #from decimal import *
 #from numpy import float64 as __Decimal
-import matplotlib as mpl 
-mpl.rcParams['font.family'] = 'serif'
+def initmatplotlib():
+    import matplotlib as mpl 
+    fig_width_pt = 513.17  # Get this from LaTeX using \showthe\columnwidth
+    inches_per_pt = 1.0/72.27               # Convert pt to inches
+    golden_mean = (sqrt(5)-1.0)/2.0         # Aesthetic ratio
+    fig_width = fig_width_pt*inches_per_pt  # width in inches
+    fig_height =fig_width*golden_mean       # height in inches
+    fig_size = [fig_width,fig_height]
+    #print fig_size
+    #fig_size = [fig_width,fig_width]
+    params = {#'backend': 'pdf',
+            'axes.labelsize': 10,
+            'lines.markersize': 4,
+            'text.fontsize': 10,
+            'xtick.major.size':6,
+            'xtick.minor.size':3,  
+            'ytick.major.size':6,
+            'ytick.minor.size':3, 
+            'xtick.major.width':1,
+            'ytick.major.width':1,
+            'xtick.minor.width':1,
+            'ytick.minor.width':1,
+            'lines.markeredgewidth':1,
+            'axes.linewidth':1,
+            'legend.fontsize': 7,
+            'xtick.labelsize': 10,
+            'ytick.labelsize': 10,
+            #'text.usetex': True,
+            'savefig.dpi':200,
+            'path.simplify':True,
+            'font.family':'serif',
+            'axes.color_cycle': ['b', 'lime', 'r', 'purple', 'g', 'c', 'm', 'orange', 'darkblue', \
+                                    'darkcyan', 'y','orangered','chartreuse','brown','deeppink','lightgreen', 'k'],
+            #'font.serif':cm,
+            'figure.figsize': fig_size}
+    mpl.rcParams.update(params)
+    return mpl
+
+mpl = initmatplotlib()
 from decimal import Decimal as __Decimal
 from decimal import getcontext
 getcontext().prec = 25
