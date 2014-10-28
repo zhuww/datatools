@@ -1207,6 +1207,7 @@ class PARfile(object):
                             self.__dict__[jumptag] = [Decimal(items[3]), Decimal(0)]
                         else:
                             self.parameters[jumptag] = '1'
+                            self.__dict__[jumptag] = [Decimal(items[3]), Decimal(0)]
                     if len(items) > 5:
                         self.__dict__[jumptag] = [Decimal(items[3]), Decimal(items[5])]
                 else:
