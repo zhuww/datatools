@@ -2058,13 +2058,15 @@ class model(PARfile):
             idx = self.groups[xargs[0]] #take a particular group
         res = self.res[idx]
         err = self.err[idx]
-        weight = 1./err**2
+        #weight = 1./err**2
+        weight = self.weight[idx]
         wmres = sum(res*weight)/sum(weight)
         mres = mean(res)
         sumres = sum(res)
         wsum = sum(weight)
         try:
-            wrms = sqrt(sum(res**2*weight - wmres*sumres)/wsum)
+            wrms = sqrt(sum(res**2*weight)/wsum - wmres**2)
+            #wrms = sqrt((sum(res**2*weight) - wmres*sumres)/wsum)
             #wrms = sqrt(sum(res**2*weight/wsum - wmres**2))
         except ValueError:
             #print sum(res**2*weight - wmres*sumres)
@@ -2368,6 +2370,8 @@ class model(PARfile):
                     N = len(idx)
                     if N > 1:
                         sigma = sqrt((sum([(res[i] - averes)**2*weight[i] for i in idx])/(N-1))/weightsum)
+                    elif N == 2:
+                        sigma = np.mean(err[idx])
                     else:
                         sigma = err[idx[0]]
                     self.averes[key].append(averes)
@@ -2407,6 +2411,8 @@ class model(PARfile):
                     N = len(idx)
                     if N > 1:
                         sigma = sqrt((sum([(res[i] - averes)**2*weight[i] for i in idx])/(N-1))/weightsum)
+                    elif N == 2:
+                        sigma = np.mean(err[idx])
                     else:
                         sigma = err[idx[0]]
                     if sigma == 0.:
@@ -2445,7 +2451,8 @@ class model(PARfile):
                 sumres = sum(res)
                 wsum = sum(weight)
                 try:
-                    wrms = sqrt(sum(res**2*weight - wmres*sumres)/wsum)
+                    wrms = sqrt(sum(res**2*weight)/wsum - wmres**2)
+                    #wrms = sqrt(sum(res**2*weight - wmres*sumres)/wsum)
                 except ValueError:
                     return None
                 return wrms
