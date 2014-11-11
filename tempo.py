@@ -14,6 +14,7 @@ def initmatplotlib(cols = 2):
     if cols == 2:
         fig_width_pt = 513.17  # Get this from LaTeX using \showthe\columnwidth
     else:
+        #print 'use cols', cols
         fig_width_pt = 246.5  # Get this from LaTeX using \showthe\columnwidth
     inches_per_pt = 1.0/72.27               # Convert pt to inches
     golden_mean = (sqrt(5)-1.0)/2.0         # Aesthetic ratio
@@ -40,13 +41,18 @@ def initmatplotlib(cols = 2):
             'xtick.labelsize': 10,
             'ytick.labelsize': 10,
             #'text.usetex': True,
-            'savefig.dpi':200,
+            'savefig.dpi':300,
             'path.simplify':True,
             'font.family':'serif',
             'axes.color_cycle': ['b', 'lime', 'r', 'purple', 'g', 'c', 'm', 'orange', 'darkblue', \
                                     'darkcyan', 'y','orangered','chartreuse','brown','deeppink','lightgreen', 'k'],
             #'font.serif':cm,
             'figure.figsize': fig_size}
+    if not cols == 2:
+        params['axes.labelsize'] = 10
+        params['xtick.labelsize'] = 7
+        params['ytick.labelsize'] = 7
+        params['text.fontsize'] = 10
     mpl.rcParams.update(params)
     return mpl
 
