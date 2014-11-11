@@ -9,10 +9,12 @@ from numpy.core.records import fromfile
 #from SaveLoadable import MetaSaveLoader
 #from decimal import *
 #from numpy import float64 as __Decimal
-def initmatplotlib():
+def initmatplotlib(cols = 2):
     import matplotlib as mpl 
-    fig_width_pt = 513.17  # Get this from LaTeX using \showthe\columnwidth
-    #fig_width_pt = 246.5  # Get this from LaTeX using \showthe\columnwidth
+    if cols == 2:
+        fig_width_pt = 513.17  # Get this from LaTeX using \showthe\columnwidth
+    else:
+        fig_width_pt = 246.5  # Get this from LaTeX using \showthe\columnwidth
     inches_per_pt = 1.0/72.27               # Convert pt to inches
     golden_mean = (sqrt(5)-1.0)/2.0         # Aesthetic ratio
     fig_width = fig_width_pt*inches_per_pt  # width in inches
