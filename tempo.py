@@ -1976,7 +1976,7 @@ class model(PARfile):
                 if type(self.FINISH) == str:
                     MJDFIN = Decimal(self.FINISH.split(' ')[0])
                 else:
-                    MJDSTA = self.toafile.end
+                    MJDFIN = self.toafile.end
             toalist = []
             i = 0
             for toa in toafile.toalist:
@@ -2153,10 +2153,14 @@ class model(PARfile):
             ax = subplot(111)
         if type(self.START) == str:
             MJDSTA = Decimal(self.START.split(' ')[0])
+        elif type(self.START) == list:
+            MJDSTA = self.START[0]
         else:
             MJDSTA = Decimal(self.START)
         if type(self.FINISH) == str:
             MJDFIN = Decimal(self.FINISH.split(' ')[0])
+        elif type(self.FINISH) == list:
+            MJDFIN = self.FINISH[0]
         else:
             MJDFIN = Decimal(self.FINISH)
         if Ylabel == "DMX":
