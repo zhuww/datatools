@@ -774,8 +774,10 @@ class TOAfile(object):
 
 
 
-    def tempo2fmt(self, tempo1use=False):
+    def tempo2fmt(self, tempo1use=False, applycut=False):
         """convert TOA file to tempo2 format"""
+        fmtstr = """
+        """
         fmtstr += '\n'
         hasphasejump = False
         currentphasejump = 0
@@ -811,7 +813,10 @@ class TOAfile(object):
 
                 '''*** try to temporarily put PHASE/jumps in tempo2 format for tempo1 use'''
 
-                fmtstr += '\n'.join([t.tempo2fmt() for t in toas])
+                if not applycut:
+                    fmtstr += '\n'.join([t.tempo2fmt() for t in toas])
+                else:
+                    fmtstr += '\n'.join([t.tempo2fmt() for t in toas if ((t.TOA > self.start) and (t.TOA < self.end))])
                 fmtstr += '\n'
             elif isinstance(toas, TOAcommand) and not toas.cmd in ['EMAX', 'EFAC', 'EQUAD', 'MODE', 'EMIN']:
                 fmtstr += '%s\n' % (toas)
