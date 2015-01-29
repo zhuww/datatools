@@ -776,8 +776,6 @@ class TOAfile(object):
 
     def tempo2fmt(self, tempo1use=False):
         """convert TOA file to tempo2 format"""
-        fmtstr = """
-"""
         fmtstr += '\n'
         hasphasejump = False
         currentphasejump = 0
@@ -1982,7 +1980,10 @@ class model(PARfile):
             for toa in toafile.toalist:
                 if toa.TOA >= MJDSTA and toa.TOA <= MJDFIN:
                     toalist.append(toa)
-                    grp = toa.flags['i']
+                    if toa.flags.has_key('i'):
+                        grp = toa.flags['i']
+                    else:
+                        grp = toa.flags['f']
                     if not grp in self.groups:
                         self.groups[grp] = [i]
                     else:
