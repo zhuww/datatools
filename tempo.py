@@ -774,10 +774,10 @@ class TOAfile(object):
 
 
 
-    def tempo2fmt(self, tempo1use=False):
+    def tempo2fmt(self, tempo1use=False, applycut=False):
         """convert TOA file to tempo2 format"""
         fmtstr = """
-"""
+        """
         fmtstr += '\n'
         hasphasejump = False
         currentphasejump = 0
@@ -813,7 +813,10 @@ class TOAfile(object):
 
                 '''*** try to temporarily put PHASE/jumps in tempo2 format for tempo1 use'''
 
-                fmtstr += '\n'.join([t.tempo2fmt() for t in toas])
+                if not applycut:
+                    fmtstr += '\n'.join([t.tempo2fmt() for t in toas])
+                else:
+                    fmtstr += '\n'.join([t.tempo2fmt() for t in toas if ((t.TOA > self.start) and (t.TOA < self.end))])
                 fmtstr += '\n'
             elif isinstance(toas, TOAcommand) and not toas.cmd in ['EMAX', 'EFAC', 'EQUAD', 'MODE', 'EMIN']:
                 fmtstr += '%s\n' % (toas)
@@ -1982,13 +1985,16 @@ class model(PARfile):
                 if type(self.FINISH) == str:
                     MJDFIN = Decimal(self.FINISH.split(' ')[0])
                 else:
-                    MJDSTA = self.toafile.end
+                    MJDFIN = self.toafile.end
             toalist = []
             i = 0
             for toa in toafile.toalist:
                 if toa.TOA >= MJDSTA and toa.TOA <= MJDFIN:
                     toalist.append(toa)
-                    grp = toa.flags['i']
+                    if toa.flags.has_key('i'):
+                        grp = toa.flags['i']
+                    else:
+                        grp = toa.flags['f']
                     if not grp in self.groups:
                         self.groups[grp] = [i]
                     else:
@@ -2159,10 +2165,14 @@ class model(PARfile):
             ax = subplot(111)
         if type(self.START) == str:
             MJDSTA = Decimal(self.START.split(' ')[0])
+        elif type(self.START) == list:
+            MJDSTA = self.START[0]
         else:
             MJDSTA = Decimal(self.START)
         if type(self.FINISH) == str:
             MJDFIN = Decimal(self.FINISH.split(' ')[0])
+        elif type(self.FINISH) == list:
+            MJDFIN = self.FINISH[0]
         else:
             MJDFIN = Decimal(self.FINISH)
         if Ylabel == "DMX":
