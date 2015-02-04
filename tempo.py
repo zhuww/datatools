@@ -1254,8 +1254,9 @@ class PARfile(object):
                         self.manifest.append(items[0])
                         continue
                     if len(items) < 4:
-                        error = value/5
-                        fitflag = '1' #set to fit for SINI, M2, and XDOT as default.
+                        #error = value/5
+                        #fitflag = '1' #set to fit for SINI, M2, and XDOT as default. #Turn this off.
+                        fitflag = '0'
                     else:
                         fitflag = items[2]
                         error = floatify(items[3])
@@ -1605,7 +1606,9 @@ class PARfile(object):
                         else:
                             pass
                     self.manifest = manifest
-                    JUMPlist.sort(key = lambda x:int(x.split('_')[-1]))
+                    try:
+                        JUMPlist.sort(key = lambda x:int(x.split('_')[-1]))
+                    except:pass
                     self.manifest.extend(DMXlist)
                     self.manifest.extend(JUMPlist)
                     #self.manifest = list(set(self.manifest))
@@ -1801,7 +1804,10 @@ class model(PARfile):
             for toa in toafile.toalist:
                 if toa.TOA >= MJDSTA and toa.TOA <= MJDFIN:
                     toalist.append(toa)
-                    grp = toa.flags['i']
+                    try:
+                        grp = toa.flags['i']
+                    except:
+                        grp = toa.flags['f']
                     if not grp in self.groups:
                         self.groups[grp] = [i]
                     else:
