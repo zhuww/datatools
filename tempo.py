@@ -2348,7 +2348,7 @@ class model(PARfile):
         idxgroups = self.groups
         if groups == '':
             keys = self.groups.keys()
-        elif groups == 'allinone':
+        elif groups == 'allinone' or groups == 'all':
             self.groups.update({'all':range(len(toafile.toalist))})
             keys = ['all']
         else:
