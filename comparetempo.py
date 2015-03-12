@@ -53,7 +53,10 @@ if __name__ == '__main__':
                 err2 = float(m2.__dict__[p][1])
             except:
                 pass
-        dev = abs(val1-val2)/max((err1, err2))
+        try:
+            dev = abs(val1-val2)/max((err1, err2))
+        except:
+            dev = np.nan
         value1.append(val1)
         value2.append(val2)
         error1.append(err1)
