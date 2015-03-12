@@ -1,3 +1,4 @@
+#!/usr/bin/python
 from datatools.tempo import *
 import sys,os
 
