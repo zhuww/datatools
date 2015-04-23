@@ -1111,7 +1111,8 @@ params =[ '   f0','   f1','   f2','  Dec','   RA',
 ' Omdt','gamma','   DM','   px',' Pbdt',' PPNg','    s',
 '    M','   m2','  dth',' xdot',' edot','   x2','   e2',
 '  T02','  Pb2','  Om2','   x3','   e3','  T03','  Pb3',
-'  Om3',' PMRV',' XOmd',' Xpbd',' om2d','  x2d']
+'  Om3',' PMRV',' XOmd',' Xpbd',' om2d','  x2d', 
+'beta ', 'lambd', 'pmbet', 'pmlam']
 
 paramap = {
         '   f0':'F0',
@@ -1160,6 +1161,10 @@ paramap = {
         'DM002':'DM002',
         'eps1 ':'EPS1',
         'eps2 ':'EPS2',
+        'beta ':'BETA',
+        'lambd':'LAMBDA',
+        'pmbet':'PMBETA',
+        'pmlam':'PMLAMBDA',
         }
 for i in range(500):
     key = 'DX' + str(i).rjust(3,'0')
@@ -1520,6 +1525,9 @@ class PARfile(object):
                     pass
             #elif p == 'PAASCNODE':
                 #new.__dict__[p][0] = new.__dict__[p][0] + Decimal(np.random.rand()*10/self.Nfac*stepsize)
+            elif p == 'T0' and self.__dict__['BINARY'] == 'ELL1':
+                p = 'TASC'
+                new.__dict__[p][0] = new.__dict__[p][0] + Decimal(repr(err[i]*self.err[i]/self.Nfac*stepsize))
             else:
                 #new.__dict__[p][0] = new.__dict__[p][0] + Decimal(str(err[i]*float(str(new.__dict__[p][1]))/self.Nfac))
                 new.__dict__[p][0] = new.__dict__[p][0] + Decimal(repr(err[i]*self.err[i]/self.Nfac*stepsize))
