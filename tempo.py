@@ -390,11 +390,14 @@ class TOAfile(object):
                                     PHASEJUMPFlag = False
                                 else:
                                     kws['padd'] = NewPhase
-                                    self.PHASEJUMPS[INFO] = NewPhase 
+                                    if 'INFO' in locals():
+                                        self.PHASEJUMPS[INFO] = NewPhase 
+
                             else:
                                 kws['padd'] = PHASE
                                 PHASEJUMPFlag = True
-                                self.PHASEJUMPS[INFO] = PHASE
+                                if 'INFO' in locals():
+                                    self.PHASEJUMPS[INFO] = NewPhase 
                         elif command.cmd == 'TIME':
                             OFFSET = float(command.args[0])
                             if kws.has_key('to'):
@@ -404,11 +407,13 @@ class TOAfile(object):
                                     TIMEOFFSETflag = False
                                 else:
                                     kws['to'] = NewOffset
-                                    self.TIMEOFFSETS[INFO] = NewOffset
+                                    if 'INFO' in locals():
+                                        self.TIMEOFFSETS[INFO] = NewOffset
                             else:
                                 kws['to'] = OFFSET
                                 TIMEOFFSETflag = True
-                                self.TIMEOFFSETS[INFO] = OFFSET
+                                if 'INFO' in locals():
+                                    self.TIMEOFFSETS[INFO] = OFFSET
                         elif command.cmd == 'EQUAD':
                             EQUAD = Decimal(command.args[0])
                             kws.update({'EQUAD':EQUAD})
@@ -511,9 +516,10 @@ class TOAfile(object):
                 phase = float(toa.flags['padd'])
                 if phasegroups.has_key(info):
                     if not phasegroups[info] == phase:
-                        print "different phase jump for the same info group %s" % info;
-                        print toa.flags
-                        raise Error
+                        print info, phasegroups[info], 'differs:', '-padd', toa.flags['padd']
+                        #print "different phase jump for the same info group %s" % info;
+                        #print toa.flags
+                        #raise Error
                 else:
                     phasegroups[info] = phase
             for key in toa.flags:
