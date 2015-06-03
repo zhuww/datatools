@@ -151,7 +151,7 @@ class TOA(object):
             self.info = []
             self.line = line.ljust(80, ' ')
             self._Observatory = self.line[79].strip()[0]
-            self.Observatory = Observatory_list[str(self._Observatory)]
+            self.Observatory = Observatory_list[str(self._Observatory).upper()]
             self.info.append(self.line[1:25].strip())
             self.frequency = Decimal(self.line[25:34])
             self.TOA = Decimal(self.line[34:55])
@@ -163,7 +163,7 @@ class TOA(object):
             self.info = []
             self.line = line.ljust(78, ' ')
             self._Observatory = self.line[0].strip()[0]
-            self.Observatory = Observatory_list[str(self._Observatory)]
+            self.Observatory = Observatory_list[str(self._Observatory).upper()]
             self.info.append(self.line[2:15].strip())
             self.frequency = Decimal(self.line[15:24])
             self.TOA = Decimal(self.line[24:44])
@@ -175,7 +175,7 @@ class TOA(object):
             self.info = []
             self.line = line.ljust(59, ' ')
             self._Observatory = self.line[57:59].strip()[0]
-            self.Observatory = Observatory_list[str(self._Observatory)]
+            self.Observatory = Observatory_list[str(self._Observatory).upper()]
             self.info.append(self.line[:9].strip())
             self.TOA = Decimal(self.line[9:28])
             self.TOAsigma = Decimal(self.line[28:34])
@@ -196,8 +196,8 @@ class TOA(object):
                 self._Observatory = '3'
             elif self._Observatory == 'gbt':
                 self._Observatory = '1'
-            if self._Observatory in Observatory_list:
-                self.Observatory = Observatory_list[str(self._Observatory)]
+            if str(self._Observatory).upper() in Observatory_list:
+                self.Observatory = Observatory_list[str(self._Observatory).upper()]
             else:
                 self.Observatory = str(self._Observatory)
             #self.info.extend(line[5:])
