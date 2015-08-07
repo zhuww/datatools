@@ -320,7 +320,7 @@ class TOAcommand(object):
 
 class TOAfile(object):
     """A class for read/operate TOA files. """ 
-    def __init__(self, file, kws='', F0=None): 
+    def __init__(self, file, kws='', F0=None, infotag=None): 
         if kws == '':
             kws = {'JUMPflag':False} #use to be in __init()__; but I forgto why I did that.
         self.toafile = file
@@ -332,6 +332,9 @@ class TOAfile(object):
         self.start = Decimal('1000000')
         self.end = Decimal('0')
         self.F0 = F0
+        self.infotags = ['f', 'i']
+        if not infotag==None:
+            self.infotags.append(infotag)
         with open(file,'rt') as f:
             text = f.read()
             lines = text.split('\n')
@@ -508,10 +511,13 @@ class TOAfile(object):
                 #jump = toa.flags['jump']
             info = 'Untaged'
             jump = 0
-            if 'i' in toa.flags:
-                info = toa.flags['i']
-            elif 'f' in toa.flags:
-                info = toa.flags['f']
+            for tag in self.infotags:
+                if tag in toa.flags:
+                    info = toa.flags[tag]
+            #if 'i' in toa.flags:
+                #info = toa.flags['i']
+            #elif 'f' in toa.flags:
+                #info = toa.flags['f']
             if toa.flags.has_key('padd'):
                 phase = float(toa.flags['padd'])
                 if phasegroups.has_key(info):
@@ -1063,10 +1069,13 @@ def tempofit(parfile, toafile=None, pulsefile=None):
     #print chisq, dof
     return chisq, dof
 
-def tempo2fit(parfile, toafile=None):
+def tempo2fit(parfile, toafile=None, usetempo1=True):
     if toafile == None:
         toafile = ''
-    line = getoutput("tempo2 -f %s %s -tempo1 > tmp2log; cat tmp2log | grep 'Chisqr/nfree'" % (parfile, toafile))
+    if usetempo1:
+        line = getoutput("tempo2 -f %s %s -tempo1 > tmp2log; cat tmp2log | grep 'Chisqr/nfree'" % (parfile, toafile))
+    else:
+        line = getoutput("tempo2 -f %s %s > tmp2log; cat tmp2log | grep 'Chisqr/nfree'" % (parfile, toafile))
     chisqlist = []
     for l in line.split('\n'):
         l  = l.split()[6]
@@ -1217,6 +1226,13 @@ class PARfile(object):
             elif items[0] == '#':pass
             elif items[0][0] == '#':pass
             elif items[0]== 'C':pass
+            elif items[0].upper() == 'DMOFF':
+                if not 'dmoffsets' in self.__dict__:
+                    self.dmoffsets = [items[1:]]
+                else:
+                    self.dmoffsets.append(items[1:])
+                if 'DMOFF' not in self.manifest:
+                    self.manifest.append('DMOFF')
             elif items[0].upper() == 'JUMP' and items[1].startswith('-'):
                 jumptag = '%s %s %s' % tuple(items[:3])
                 JumpCount += 1
@@ -1237,9 +1253,6 @@ class PARfile(object):
                     self.__dict__[jumptag] = (Decimal(0), Decimal(0))
                     self.parameters[jumptag] = '1'
                 self.__dict__[jumpalias] = self.__dict__[jumptag] #setup the jump alias, this does not work if both tempo1 and tempo2 format are used in mixture.
-            elif len(items) == 2 and not items[0] in ['SINI', 'M2', 'XDOT']: 
-                self.__dict__[items[0]] = floatify(items[1])
-                self.manifest.append(items[0])
             elif items[0] in ['START', 'FINISH']:
                 if len(items)>2 and items[2] == '1':
                     self.__dict__[items[0]] = items[1] + ' ' + '1'
@@ -1256,6 +1269,9 @@ class PARfile(object):
                     print items, 'this list seems to be too short for a T2EXXX parameter'
                     raise Error 
                 self.manifest.append(T2Etag)
+            elif len(items) == 2 and not items[0] in ['SINI', 'M2', 'XDOT']: 
+                self.__dict__[items[0]] = floatify(items[1])
+                self.manifest.append(items[0])
             elif len(items) == 3 or items[0] in ['SINI', 'M2', 'XDOT']:
                 value = floatify(items[1])
                 if isinstance(value, decimal.Decimal):
@@ -1357,6 +1373,8 @@ class PARfile(object):
                             text += '%s\t%s\t%s\t%s\n' % (item, self.__dict__[item][0], self.parameters[item], self.__dict__[item][1])
                         else:
                             text += '%s\t%s\t%s\n' % (item, self.__dict__[item], self.parameters[item])
+                elif item == 'DMOFF':
+                    text += (''.join(['%s\t%s\n' % (item, ' '.join(dmoff))  for dmoff in self.dmoffsets]))
                 else:
                     text += ('%s\t%s\n' % (item, self.__dict__[item])).replace('D+00','')
             f.write(text)
@@ -1934,7 +1952,7 @@ class model(PARfile):
 
 
 
-    def tempo2fit(self, toafile=None, checkTOAs=False):
+    def tempo2fit(self, toafile=None, checkTOAs=False, usetempo1=True):
         """
         model.tempo2fit(toafile, pulsefile=None):
         use tempo2 to fit the parfile and toafile.
@@ -2033,8 +2051,12 @@ class model(PARfile):
                 print "Groups defined in parfile and not in toafile: %s" % (set(self.jumps.keys()) - set(self.jumpgroups.keys()))
                 print "Groups defined in toafile and not in parfile: %s" % (set(self.jumpgroups.keys()) - set(self.jumps.keys()))
 
-        line = getoutput("tempo2 -f %s %s -tempo1 -output general2 -s '{bat} {freq} {post} {err} {post_phase} {binphase} {pre} {pre_phase} {npulse}\n' -outfile resid.dat -showchisq > tmp2log1" % (self.parfile, toafile.toafile))
-        line = getoutput("tempo2 -f %s %s -tempo1 -showchisq -newpar > tmp2log2; cat tmp2log2 | grep 'Chisqr/nfree'" % (self.parfile, toafile.toafile))
+        if usetempo1:
+            line = getoutput("tempo2 -f %s %s -tempo1 -output general2 -s '{bat} {freq} {post} {err} {post_phase} {binphase} {pre} {pre_phase} {npulse}\n' -outfile resid.dat -showchisq > tmp2log1" % (self.parfile, toafile.toafile))
+            line = getoutput("tempo2 -f %s %s -tempo1 -showchisq -newpar > tmp2log2; cat tmp2log2 | grep 'Chisqr/nfree'" % (self.parfile, toafile.toafile))
+        else:
+            line = getoutput("tempo2 -f %s %s -output general2 -s '{bat} {freq} {post} {err} {post_phase} {binphase} {pre} {pre_phase} {npulse}\n' -outfile resid.dat -showchisq > tmp2log1" % (self.parfile, toafile.toafile))
+            line = getoutput("tempo2 -f %s %s -showchisq -newpar > tmp2log2; cat tmp2log2 | grep 'Chisqr/nfree'" % (self.parfile, toafile.toafile))
         self.line = line
         chisqlist = []
         for l in line.split('\n'):
