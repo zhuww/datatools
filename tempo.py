@@ -227,6 +227,9 @@ class TOA(object):
             self.info.append(tags)
             self.DMcorr = Decimal(0)
 
+        if self.TOA < 30000:
+            self.TOA += 39126
+
 
         #if self.flags.has_key('EQUAD'):
             #self.TOAsigma = sqrt(self.TOAsigma**2 + self.flags['EQUAD']**2)
@@ -1258,7 +1261,7 @@ class PARfile(object):
                     self.__dict__[items[0]] = items[1] + ' ' + '1'
                     self.TOArangelimits = True
                 else:
-                    self.__dict__[items[0]] = value
+                    self.__dict__[items[0]] = Decimal(items[1])
                 self.manifest.append(items[0])
             elif items[0].startswith('T2E') or items[0].startswith('ECORR'):
                 if len(items) >= 4:
@@ -2296,6 +2299,9 @@ class model(PARfile):
             else:
                 #idx = self.groups[grp]
                 idx = [j for j in self.groups[grp] if (self.toa[j] >= float(MJDSTA) and self.toa[j] <= float(MJDFIN)) ]
+                if len(idx) == 0:
+                    print 'no TOAs in group %s between MJD %f and %f' % (grp, MJDSTA, MJDFIN)
+                    break
                 if Ylabel == "res" or Ylabel == "residual":
                     Y = self.res[idx]
                     Yerr = self.err[idx]
