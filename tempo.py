@@ -1621,7 +1621,8 @@ class PARfile(object):
                                 self.parameters[par1] = '0'
                                 self.manifest.append(par1)
                     DMXlist = ['DMX']
-                    self.__dict__['DMX'] = '0.10000000D+02'
+                    if self.__dict__.has_key('DMX') or self.__dict__.has_key('DMX_0001'):
+                        self.__dict__['DMX'] = '0.10000000D+02'
                     JUMPlist = []
                     manifest = self.manifest[:]
                     for par in self.manifest:
@@ -1647,7 +1648,8 @@ class PARfile(object):
                     try:
                         JUMPlist.sort(key = lambda x:int(x.split('_')[-1]))
                     except:pass
-                    self.manifest.extend(DMXlist)
+                    if self.__dict__.has_key('DMX') or self.__dict__.has_key('DMX_0001'):
+                        self.manifest.extend(DMXlist)
                     self.manifest.extend(JUMPlist)
                     #self.manifest = list(set(self.manifest))
                     
