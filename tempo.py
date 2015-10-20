@@ -2216,7 +2216,7 @@ class model(PARfile):
             MJDFIN = self.FINISH[0]
         else:
             MJDFIN = Decimal(self.FINISH)
-        if Ylabel == "DMX":
+        if Ylabel == "DMX" or Ylabel == 'dmx':
             from matplotlib.ticker import FormatStrFormatter
             majorFormatter = FormatStrFormatter('%5.0f')
             DMX, DMXErr, DMXR1, DMXR2 = self.dmxlist
@@ -2255,7 +2255,7 @@ class model(PARfile):
         if groups == None and not Ylabel in ['averes','aveerr']:
             groups = self.groups.keys()
             groups.sort()
-            #groups = self.toafile.grouporder
+
         elif groups == None and Ylabel in ['averes', 'aveerr']:
             groups = self.averes.keys()
             groups.sort()
