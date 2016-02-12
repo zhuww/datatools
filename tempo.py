@@ -442,6 +442,14 @@ class TOAfile(object):
                             self.EFAC = Decimal(command.args[0])
                             self.list.append(command)#ignore
                             kws['EFAC'] = self.EFAC
+                        elif command.cmd == 'FMIN':
+                            self.FMIN = Decimal(command.args[0])
+                            self.list.append(command)#ignore
+                            kws['FMIN'] = self.FMIN
+                        elif command.cmd == 'FMAX':
+                            self.FMAX = Decimal(command.args[0])
+                            self.list.append(command)#ignore
+                            kws['FMAX'] = self.FMAX
                         else:
                             self.list.append(command)#ignore
                     else:
@@ -461,10 +469,18 @@ class TOAfile(object):
                             #if t.flags.has_key('EFAC') and t.flags.has_key('EMAX'):
                                 #if t.TOAsigma * t.flags['EFAC'] > t.flags['EMAX']:
                                     #continue 
-
-                            toagroup.append(t)
-                            if t.TOA < self.start:self.start = t.TOA
-                            if t.TOA > self.end: self.end = t.TOA
+                            KICKOUT = False
+                            if t.flags.has_key('FMAX'):
+                                if t.frequency > t.flags['FMAX']:
+                                    KICKOUT = True
+                            if t.flags.has_key('FMIN'):
+                                if t.frequency < t.flags['FMIN']:
+                                    KICKOUT = True
+                            if KICKOUT == False:
+                                toagroup.append(t)
+                                if t.TOA < self.start:self.start = t.TOA
+                                if t.TOA > self.end: self.end = t.TOA
+                            KICKOUT = False
                         else:
                             pass # skipped
             if len(toagroup) > 0:self.list.append(toagroup)
@@ -2287,7 +2303,7 @@ class model(PARfile):
                     X = [self.aveoph[grp][i] for i in idx]
                     Xerr = [self.opherr[grp][i] for i in idx]
                 elif Xlabel == "freq" or Xlabel == "frequency":
-                    #raise "Not allowed to plot averes vs frequence"
+                    #raise "Not allowed to plot averes vs frequency"
                     X = self.avefrq[grp]
                     Xerr = self.frqerr[grp]
                     Y = self.averes[grp]
