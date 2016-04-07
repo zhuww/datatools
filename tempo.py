@@ -44,8 +44,10 @@ def initmatplotlib(cols = 2):
             'savefig.dpi':300,
             'path.simplify':True,
             'font.family':'serif',
+            #'axes.color_cycle': ['b', 'lime', 'r', 'purple', 'g', 'c', 'm', 'orange', 'darkblue', \
+                                    #'darkcyan', 'y','orangered','chartreuse','brown','deeppink','lightgreen', 'k'],
             'axes.color_cycle': ['b', 'lime', 'r', 'purple', 'g', 'c', 'm', 'orange', 'darkblue', \
-                                    'darkcyan', 'y','orangered','chartreuse','brown','deeppink','lightgreen', 'k'],
+                                    'darkcyan', 'y','orangered','chartreuse','deeppink','lightgreen', 'k'],
             #'font.serif':cm,
             'figure.figsize': fig_size}
     if not cols == 2:
