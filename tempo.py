@@ -57,6 +57,7 @@ def initmatplotlib(cols = 2):
                                     #'darkcyan', 'y','orangered','chartreuse','brown','deeppink','lightgreen', 'k'],
             'axes.color_cycle': ['b', 'lime', 'r', 'purple', 'g', 'c', 'm', 'orange', 'darkblue', \
                                     'darkcyan', 'y','orangered','chartreuse','deeppink','lightgreen', 'k'],
+            'axes.formatter.useOffset':False,
             #'font.serif':cm,
             'figure.figsize': fig_size}
     if not cols == 2:
@@ -2246,6 +2247,8 @@ class model(PARfile):
         if Ylabel == "DMX" or Ylabel == 'dmx':
             from matplotlib.ticker import FormatStrFormatter
             majorFormatter = FormatStrFormatter('%5.0f')
+            minorFormatter = FormatStrFormatter('%3.3f')
+            ax.ticklabel_format(useOffset=False)
             DMX, DMXErr, DMXR1, DMXR2 = self.dmxlist
             DMXR = []
             DMXRErr = []
@@ -2264,6 +2267,7 @@ class model(PARfile):
                     DMXR.append((float(DMXR1[i]+DMXR2[i])/2))
                     DMXRErr.append((float(DMXR2[i]) - float(DMXR1[i]))/2)
                     ax.xaxis.set_major_formatter(majorFormatter)
+                ax.yaxis.set_major_formatter(minorFormatter)
                 DMXvalue.append(float(str(DMX[i])))
                 DMXerror.append(float(str(DMXErr[i])))
             try:
