@@ -12,7 +12,8 @@ from numpy.core.records import fromfile
 def initmatplotlib(cols = 2):
     import matplotlib as mpl 
     inches_per_pt = 1.0/72.27               # Convert pt to inches
-    golden_mean = (sqrt(5)-1.0)/2.0         # Aesthetic ratio
+    #golden_mean = (sqrt(5)-1.0)/2.0         # Aesthetic ratio
+    golden_mean = 0.7
 
     if cols == 2:
         fig_width_pt = 513.17  # Get this from LaTeX using \showthe\columnwidth
@@ -22,14 +23,6 @@ def initmatplotlib(cols = 2):
     elif cols == 1:
         #print 'use cols', cols
         fig_width_pt = 246.5  # Get this from LaTeX using \showthe\columnwidth
-<<<<<<< HEAD
-    inches_per_pt = 1.0/72.27               # Convert pt to inches
-    #golden_mean = (sqrt(5)-1.0)/2.0         # Aesthetic ratio
-    golden_mean =  0.7        # Aesthetic ratio
-    fig_width = fig_width_pt*inches_per_pt  # width in inches
-    fig_height =fig_width*golden_mean       # height in inches
-    fig_size = [fig_width,fig_height]
-=======
         fig_width = fig_width_pt*inches_per_pt  # width in inches
         fig_height =fig_width*golden_mean       # height in inches
         fig_size = [fig_width,fig_height]
@@ -38,7 +31,6 @@ def initmatplotlib(cols = 2):
         fig_width = fig_width_pt*inches_per_pt  # width in inches
         fig_height =fig_width #square fig
         fig_size = [fig_width,fig_height]
->>>>>>> e357349af533ece65254e6a48ca9bf2323b0bb3f
     #print fig_size
     #fig_size = [fig_width,fig_width]
     params = {#'backend': 'pdf',
@@ -66,7 +58,7 @@ def initmatplotlib(cols = 2):
                                     #'darkcyan', 'y','orangered','chartreuse','brown','deeppink','lightgreen', 'k'],
             'axes.color_cycle': ['b', 'lime', 'r', 'purple', 'g', 'c', 'm', 'orange', 'darkblue', \
                                     'darkcyan', 'y','orangered','chartreuse','deeppink','lightgreen', 'k'],
-            'axes.formatter.useOffset':False,
+            #'axes.formatter.useOffset':False,
             #'font.serif':cm,
             'figure.figsize': fig_size,
             'figure.subplot.left':0.15,
