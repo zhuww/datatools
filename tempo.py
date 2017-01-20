@@ -11,17 +11,34 @@ from numpy.core.records import fromfile
 #from numpy import float64 as __Decimal
 def initmatplotlib(cols = 2):
     import matplotlib as mpl 
+    inches_per_pt = 1.0/72.27               # Convert pt to inches
+    golden_mean = (sqrt(5)-1.0)/2.0         # Aesthetic ratio
+
     if cols == 2:
         fig_width_pt = 513.17  # Get this from LaTeX using \showthe\columnwidth
-    else:
+        fig_width = fig_width_pt*inches_per_pt  # width in inches
+        fig_height =fig_width*golden_mean       # height in inches
+        fig_size = [fig_width,fig_height]
+    elif cols == 1:
         #print 'use cols', cols
         fig_width_pt = 246.5  # Get this from LaTeX using \showthe\columnwidth
+<<<<<<< HEAD
     inches_per_pt = 1.0/72.27               # Convert pt to inches
     #golden_mean = (sqrt(5)-1.0)/2.0         # Aesthetic ratio
     golden_mean =  0.7        # Aesthetic ratio
     fig_width = fig_width_pt*inches_per_pt  # width in inches
     fig_height =fig_width*golden_mean       # height in inches
     fig_size = [fig_width,fig_height]
+=======
+        fig_width = fig_width_pt*inches_per_pt  # width in inches
+        fig_height =fig_width*golden_mean       # height in inches
+        fig_size = [fig_width,fig_height]
+    else:
+        fig_width_pt = 246.5  # Get this from LaTeX using \showthe\columnwidth
+        fig_width = fig_width_pt*inches_per_pt  # width in inches
+        fig_height =fig_width #square fig
+        fig_size = [fig_width,fig_height]
+>>>>>>> e357349af533ece65254e6a48ca9bf2323b0bb3f
     #print fig_size
     #fig_size = [fig_width,fig_width]
     params = {#'backend': 'pdf',
@@ -49,6 +66,7 @@ def initmatplotlib(cols = 2):
                                     #'darkcyan', 'y','orangered','chartreuse','brown','deeppink','lightgreen', 'k'],
             'axes.color_cycle': ['b', 'lime', 'r', 'purple', 'g', 'c', 'm', 'orange', 'darkblue', \
                                     'darkcyan', 'y','orangered','chartreuse','deeppink','lightgreen', 'k'],
+            'axes.formatter.useOffset':False,
             #'font.serif':cm,
             'figure.figsize': fig_size,
             'figure.subplot.left':0.15,
@@ -1288,7 +1306,7 @@ class PARfile(object):
                 else:
                     self.__dict__[items[0]] = Decimal(items[1])
                 self.manifest.append(items[0])
-            elif items[0].startswith('T2E') or items[0].startswith('ECORR'):
+            elif items[0].startswith('T2E') or items[0].startswith('ECORR') or items[0].startswith('TNE'):
                 if len(items) >= 4:
                     T2Etag = ' '.join(items[0:3]) 
                     value = floatify(items[3])
@@ -2244,6 +2262,8 @@ class model(PARfile):
         if Ylabel == "DMX" or Ylabel == 'dmx':
             from matplotlib.ticker import FormatStrFormatter
             majorFormatter = FormatStrFormatter('%5.0f')
+            minorFormatter = FormatStrFormatter('%3.3f')
+            ax.ticklabel_format(useOffset=False)
             DMX, DMXErr, DMXR1, DMXR2 = self.dmxlist
             DMXR = []
             DMXRErr = []
@@ -2262,6 +2282,7 @@ class model(PARfile):
                     DMXR.append((float(DMXR1[i]+DMXR2[i])/2))
                     DMXRErr.append((float(DMXR2[i]) - float(DMXR1[i]))/2)
                     ax.xaxis.set_major_formatter(majorFormatter)
+                ax.yaxis.set_major_formatter(minorFormatter)
                 DMXvalue.append(float(str(DMX[i])))
                 DMXerror.append(float(str(DMXErr[i])))
             try:
@@ -2381,10 +2402,10 @@ class model(PARfile):
         ax.set_ylabel(labeldict[Ylabel])
         if LegendOn:
             if LegendLabels == None:
-                legend([subplots[g] for g in groups], [g for g in groups], loc=LegendLoc, numpoints=1)
+                ax.legend([subplots[g] for g in groups], [g for g in groups], loc=LegendLoc, numpoints=1)
             else:
-                legend([subplots[g] for g in groups], LegendLabels, loc=LegendLoc, numpoints=1)
-        return ax                
+                ax.legend([subplots[g] for g in groups], LegendLabels, loc=LegendLoc, numpoints=1)
+        return subplots                
 
 
     def average(self, groups='', lapse=0.5, freqbin=None):
