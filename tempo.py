@@ -17,7 +17,8 @@ def initmatplotlib(cols = 2):
         #print 'use cols', cols
         fig_width_pt = 246.5  # Get this from LaTeX using \showthe\columnwidth
     inches_per_pt = 1.0/72.27               # Convert pt to inches
-    golden_mean = (sqrt(5)-1.0)/2.0         # Aesthetic ratio
+    #golden_mean = (sqrt(5)-1.0)/2.0         # Aesthetic ratio
+    golden_mean =  0.7        # Aesthetic ratio
     fig_width = fig_width_pt*inches_per_pt  # width in inches
     fig_height =fig_width*golden_mean       # height in inches
     fig_size = [fig_width,fig_height]
@@ -49,13 +50,19 @@ def initmatplotlib(cols = 2):
             'axes.color_cycle': ['b', 'lime', 'r', 'purple', 'g', 'c', 'm', 'orange', 'darkblue', \
                                     'darkcyan', 'y','orangered','chartreuse','deeppink','lightgreen', 'k'],
             #'font.serif':cm,
-            'figure.figsize': fig_size}
+            'figure.figsize': fig_size,
+            'figure.subplot.left':0.15,
+            'figure.subplot.bottom':0.20,
+            'figure.subplot.right':0.95,
+            'figure.subplot.top':0.95}
     if not cols == 2:
         params['axes.labelsize'] = 10
         params['xtick.labelsize'] = 7
         params['ytick.labelsize'] = 7
         params['text.fontsize'] = 10
     mpl.rcParams.update(params)
+    #from matplotlib import pyplot
+    #pyplot.locator_params(nbins=6)
     return mpl
 
 mpl = initmatplotlib()
