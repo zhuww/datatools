@@ -2233,7 +2233,8 @@ class model(PARfile):
                 "aveerr":r'Averaged erro (${\rm \mu}$s)',
                 "post phase":'postfit phase',
                 "prefit":r'prefit residual (${\rm \mu}$s)',
-                "DMX":r'Delta DM (pc cm$^{-3}$)',
+                #"DMX":r'Delta DM (pc cm$^{-3}$)',
+                "DMX":r'DM (pc cm$^{-3}$)',
                 }
         def dayofyear(dt):
             return float(dt.strftime('%j')) + float(dt.strftime('%H'))/24
@@ -2287,8 +2288,8 @@ class model(PARfile):
                 print 'value: ', DMXvalue
                 print 'Rerr: ', DMXRErr
                 print 'DM err: ', DMXerror
-            xlabel(labeldict[Xlabel])
-            ylabel(labeldict[Ylabel])
+            ax.set_xlabel(labeldict[Xlabel])
+            ax.set_ylabel(labeldict[Ylabel])
             return ax
         if groups == None and not Ylabel in ['averes','aveerr']:
             groups = self.groups.keys()
