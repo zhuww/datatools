@@ -364,8 +364,8 @@ class TOAfile(object):
             SKIPflag = False
             PHASEJUMPFlag = False
             TIMEOFFSETflag = False
-            for l in lines:
-                l = l.strip()
+            for line in lines:
+                l = line.strip()
                 l = l.strip(' ')
                 s =l.strip().find('INCLUDE')
                 if l.strip().startswith('NOSKIP'):
@@ -478,7 +478,7 @@ class TOAfile(object):
                             if not file.find(' ') == -1:
                                 file = ''
                             try:
-                                t= TOA(l, file = file, **kws)
+                                t= TOA(line, file = file, **kws)
                             except TypeError:
                                 print 'Probamatic line: ', l
                                 print 'from file %s' % file
