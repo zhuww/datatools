@@ -13,17 +13,18 @@ def initmatplotlib(cols = 2):
     import matplotlib as mpl 
     inches_per_pt = 1.0/72.27               # Convert pt to inches
     #golden_mean = (sqrt(5)-1.0)/2.0         # Aesthetic ratio
-    golden_mean = 0.7
 
     if cols == 2:
         fig_width_pt = 513.17  # Get this from LaTeX using \showthe\columnwidth
         fig_width = fig_width_pt*inches_per_pt  # width in inches
+        golden_mean = (sqrt(5)-1.0)/2.0         # Aesthetic ratio
         fig_height =fig_width*golden_mean       # height in inches
         fig_size = [fig_width,fig_height]
     elif cols == 1:
         #print 'use cols', cols
         fig_width_pt = 246.5  # Get this from LaTeX using \showthe\columnwidth
         fig_width = fig_width_pt*inches_per_pt  # width in inches
+        golden_mean = 0.7
         fig_height =fig_width*golden_mean       # height in inches
         fig_size = [fig_width,fig_height]
     else:
