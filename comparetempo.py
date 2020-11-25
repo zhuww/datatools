@@ -72,8 +72,8 @@ if __name__ == '__main__':
         import matplotlib.pyplot as plt
         fig, ax1 = plt.subplots()#figsize=(10,6))
         fig.canvas.set_window_title('compare %s %s' % ( f1, f2))
-        ax1.yaxis.grid(True, linestyle='-', which='major', color='lightblue')
-        ax1.xaxis.grid(True, linestyle='-', which='major', color='lightblue')
+        #ax1.yaxis.grid(True, linestyle='-', which='major', color='lightblue')
+        #ax1.xaxis.grid(True, linestyle='-', which='major', color='lightblue')
         xticks = plt.setp(ax1, xticks=range(len(par)))
         xtickNames = plt.setp(ax1, xticklabels=par)
         #xtickNames = plt.setp(ax1, xticklabels=[('%s' % s) for s in range(len(par))])

@@ -37,7 +37,7 @@ def initmatplotlib(cols = 2):
     params = {#'backend': 'pdf',
             'axes.labelsize': 10,
             'lines.markersize': 4,
-            'text.fontsize': 10,
+            'font.size': 10,
             'xtick.major.size':6,
             'xtick.minor.size':3,  
             'ytick.major.size':6,
@@ -70,7 +70,7 @@ def initmatplotlib(cols = 2):
         params['axes.labelsize'] = 10
         params['xtick.labelsize'] = 7
         params['ytick.labelsize'] = 7
-        params['text.fontsize'] = 10
+        params['font.size'] = 10
     mpl.rcParams.update(params)
     #from matplotlib import pyplot
     #pyplot.locator_params(nbins=6)
@@ -148,6 +148,8 @@ Observatory_list = {
         'S':   'WSRT',
         'T':   'VLT',
         'U':   'VLT',
+        'k':   'FAST',
+        'fast':'FAST'
 } 
 
 
@@ -186,8 +188,12 @@ class TOA(object):
             self.Observatory = Observatory_list[str(self._Observatory).upper()]
             self.info.append(self.line[2:15].strip())
             self.frequency = Decimal(self.line[15:24])
-            self.TOA = Decimal(self.line[24:44])
-            self.TOAsigma = Decimal(self.line[44:53])
+            try:
+                self.TOA = Decimal(self.line[24:44])
+                self.TOAsigma = Decimal(self.line[44:53])
+            except:
+                self.TOA = Decimal('4'+self.line[25:47])
+                self.TOAsigma = Decimal(self.line[49:53])
             self.info.append(self.line[53:68].strip())
             self.DMcorr = Decimal(self.line[68:77])
         elif not line[0] ==' ' and not line[1] == ' ' and line[14] == '.' and len(line.rstrip(' ')) <= 60:
@@ -1188,6 +1194,7 @@ paramap = {
         '    e':'E',
         '    s':'SINI',
         '   m2':'M2',
+        '    M':'MTOT',
         '   T0':'T0',
         ' xdot':'XDOT',
         '   Pb':'PB',
@@ -1255,6 +1262,7 @@ class PARfile(object):
         self.parameters = {} # a place to hold the fit flag for each fitable parameter
         self.file = open(file, 'r')
         self.jumps = {0:Decimal(0)}
+        #self.jumps = {}
         self.TOArangelimits = False
         self.TempoVersion = 1
         self.UseTempo2StyJumps = False
@@ -1972,7 +1980,7 @@ class model(PARfile):
                     t.npulse = npulse[i]
                 except IndexError:
                     print i, len(npulse)
-            self.toafile.pulsefile = tmppulsefile
+        self.toafile.pulsefile = tmppulsefile
 
         """what if I just turn of this test"""
         if checkTOAs:
@@ -2643,3 +2651,68 @@ def read_design(filename='design.tmp',include_DC=True,sort=False):
        w = w[idx]
        A = A[idx,:]
    return (t,w,A)
+
+
+def hist2contour(x, y, xlabel='', ylabel=''):
+    _xlabel = xlabel
+    _ylabel = ylabel
+
+    import numpy as np
+    import scipy.optimize as opt
+    from scipy import stats
+    from matplotlib.ticker import NullFormatter
+    import matplotlib.pyplot as plt
+    from pylab import cm, clabel, xlabel, ylabel
+
+    H, xed, yed = np.histogram2d(x,y, bins=25)
+    extent = [ xed[0], xed[-1], yed[-1], yed[0]]
+    xbin, ybin = [], []
+    for i in range(1, len(xed)):
+        xbin.append((xed[i] + xed[i-1])/2.)
+        ybin.append((yed[i] + yed[i-1])/2.)
+
+
+    xm = np.mean(x)
+    ym = np.mean(y)
+    xs = np.std(x)
+    ys = np.std(y)
+    xpdf = stats.norm(xm, xs)
+    ypdf = stats.norm(ym, ys)
+
+    total = np.sum(H)
+
+    def onesig(lev):
+        return np.sum(H[H>lev])/total - 0.682
+    def twosig(lev):
+        return np.sum(H[H>lev])/total - 0.954
+    def trisig(lev):
+        return np.sum(H[H>lev])/total - 0.997
+
+    levels = opt.bisect(onesig, 1, 100000), opt.bisect(twosig, 1, 50000)#, opt.bisect(trisig, 1, 10000)
+    levellabel = {levels[0]:'68%', levels[1]:'95%'}
+    def fomt(x):
+        return levellabel[x]
+
+    nullfmt   = NullFormatter()         # no labels
+
+    plt.figure(1, figsize=(8,8))
+    cnorm = cm.colors.Normalize(vmax=abs(H).max(), vmin=0.)
+    cmap = cm.binary
+
+    axScatter = plt.subplot(111)
+
+    CS = axScatter.contour(xbin,ybin, H, levels=levels)
+    clabel(CS, inline=1, fmt=fomt, manual=True, fontsize=20)
+
+    #xlabel(r'$\dot{G}/G [10^{-12}{\rm yr}^{-1}]$', fontsize=24)
+    #ylabel('$\kappa_D[10^{-4}]$', fontsize=24)
+    xlabel(_xlabel, fontsize=24)
+    ylabel(_ylabel, fontsize=24)
+
+    axScatter.xaxis.set_tick_params(size=10)
+    axScatter.yaxis.set_tick_params(size=10)
+    axScatter.xaxis.set_tick_params(labelsize=20)
+    axScatter.yaxis.set_tick_params(labelsize=20)
+
+    plt.draw()
+    plt.show()
